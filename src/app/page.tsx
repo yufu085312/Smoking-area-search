@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { 
   getAllSmokingAreas, 
   addSmokingArea,
@@ -11,6 +12,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { signOut } from '@/utils/auth';
 import Link from 'next/link';
 import { MESSAGES } from '@/constants/messages';
+
+// MapComponentを動的インポート（SSR無効化）
+const MapComponent = dynamic(() => import('@/components/MapComponent'), {
+  ssr: false,
+  loading: () => <div>{MESSAGES.MAP.LOADING_MAP}</div>,
+});
 
 export default function Home() {
   const router = useRouter();
@@ -34,7 +41,11 @@ export default function Home() {
     fetchSmokingAreas();
   }, []);
 
-  const handleAddSmokingArea = async () => {
+  const handleAddSmokingArea = async (
+    lat: number,
+    lng: number,
+    memo?: string
+  ) => {
     if (!user) {
       alert(MESSAGES.AUTH.LOGIN_REQUIRED);
       router.push('/login');
@@ -42,17 +53,18 @@ export default function Home() {
     }
 
     try {
-      const newArea = {
-        name: 'サンプル喫煙所',
-        address: '東京都渋谷区',
-        latitude: 35.6595,
-        longitude: 139.7004,
-        description: 'テスト用の喫煙所です',
-        createdBy: user.uid,
+      const newArea: any = {
+        latitude: lat,
+        longitude: lng,
+        createdById: user.uid,
       };
       
-      const areaId = await addSmokingArea(newArea);
-      console.log('追加された喫煙所のID:', areaId);
+      // memoが存在する場合のみmemoフィールドを追加
+      if (memo) {
+        newArea.memo = memo;
+      }
+
+      await addSmokingArea(newArea);
       
       // リストを再取得
       const areas = await getAllSmokingAreas();
@@ -111,35 +123,15 @@ export default function Home() {
       </header>
 
       <main>
-        <p>{MESSAGES.HOME.DESCRIPTION}</p>
+        <p style={{ marginBottom: '16px' }}>{MESSAGES.HOME.DESCRIPTION}</p>
+        <p style={{ marginBottom: '16px', color: '#666', fontSize: '14px' }}>
+          {MESSAGES.MAP.CLICK_TO_ADD}
+        </p>
         
-        <button
-          onClick={handleAddSmokingArea}
-          style={{
-            padding: '12px 24px',
-            marginTop: '20px',
-            backgroundColor: user ? '#0070f3' : '#ccc',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: user ? 'pointer' : 'not-allowed',
-          }}
-        >
-          {MESSAGES.HOME.ADD_SMOKING_AREA_TEST}
-        </button>
-        
-        <h2 style={{ marginTop: '30px' }}>{MESSAGES.HOME.SMOKING_AREA_LIST}</h2>
-        {smokingAreas.length === 0 ? (
-          <p>{MESSAGES.HOME.NO_SMOKING_AREAS}</p>
-        ) : (
-          <ul>
-            {smokingAreas.map((area) => (
-              <li key={area.id} style={{ marginBottom: '10px' }}>
-                <strong>{area.name}</strong> - {area.address}
-              </li>
-            ))}
-          </ul>
-        )}
+        <MapComponent
+          smokingAreas={smokingAreas}
+          onAddSmokingArea={handleAddSmokingArea}
+        />
       </main>
     </div>
   );
