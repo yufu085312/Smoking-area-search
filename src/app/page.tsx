@@ -9,14 +9,20 @@ import {
   SmokingArea
 } from '@/utils/firestore';
 import { useAuth } from '@/contexts/AuthContext';
-import { signOut } from '@/utils/auth';
-import Link from 'next/link';
 import { MESSAGES } from '@/constants/messages';
+import Header from '@/components/Header';
 
 // MapComponentを動的インポート（SSR無効化）
 const MapComponent = dynamic(() => import('@/components/MapComponent'), {
   ssr: false,
-  loading: () => <div>{MESSAGES.MAP.LOADING_MAP}</div>,
+  loading: () => (
+    <div className="flex items-center justify-center h-[600px] glass rounded-xl">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-text-secondary">{MESSAGES.MAP.LOADING_MAP}</p>
+      </div>
+    </div>
+  ),
 });
 
 export default function Home() {
@@ -74,64 +80,42 @@ export default function Home() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      router.push('/login');
-    } catch (error) {
-      console.error(MESSAGES.ERROR.LOGOUT_ERROR, error);
-    }
-  };
-
   if (authLoading || loading) {
-    return <div>{MESSAGES.COMMON.LOADING}</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-text-secondary">{MESSAGES.COMMON.LOADING}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <header style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>{MESSAGES.HOME.TITLE}</h1>
-        <div>
-          {user ? (
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <span>{MESSAGES.AUTH.WELCOME}, {user.email}</span>
-              <button
-                onClick={handleLogout}
-                style={{
-                  padding: '8px 16px',
-                  backgroundColor: '#dc3545',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
-              >
-                {MESSAGES.AUTH.LOGOUT}
-              </button>
-            </div>
-          ) : (
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <Link href="/login" style={{ padding: '8px 16px', backgroundColor: '#0070f3', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
-                  {MESSAGES.AUTH.LOGIN}
-              </Link>
-              <Link href="/signup" style={{ padding: '8px 16px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
-                  {MESSAGES.AUTH.SIGNUP}
-              </Link>
-            </div>
-          )}
-        </div>
-      </header>
+    <div className="min-h-screen">
+      <Header />
 
-      <main>
-        <p style={{ marginBottom: '16px' }}>{MESSAGES.HOME.DESCRIPTION}</p>
-        <p style={{ marginBottom: '16px', color: '#666', fontSize: '14px' }}>
-          {MESSAGES.MAP.CLICK_TO_ADD}
-        </p>
-        
-        <MapComponent
-          smokingAreas={smokingAreas}
-          onAddSmokingArea={handleAddSmokingArea}
-        />
+      <main className="container py-8 animate-fadeIn">
+        {/* Hero Section */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+            {MESSAGES.HOME.TITLE}
+          </h1>
+          <p className="text-text-secondary text-lg mb-2">
+            {MESSAGES.HOME.DESCRIPTION}
+          </p>
+          <p className="text-text-muted text-sm">
+            {MESSAGES.MAP.CLICK_TO_ADD}
+          </p>
+        </div>
+
+        {/* Map Section */}
+        <div className="max-w-6xl mx-auto">
+          <MapComponent
+            smokingAreas={smokingAreas}
+            onAddSmokingArea={handleAddSmokingArea}
+          />
+        </div>
       </main>
     </div>
   );

@@ -6,6 +6,8 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { SmokingArea } from '@/utils/firestore';
 import { MESSAGES } from '@/constants/messages';
+import Modal from './ui/Modal';
+import Button from './ui/Button';
 
 // Leafletのデフォルトアイコン設定を修正
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -111,11 +113,11 @@ export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComp
   };
 
   return (
-    <div style={{ position: 'relative', height: '600px', width: '100%' }}>
+    <div className="relative h-[600px] w-full rounded-xl overflow-hidden shadow-2xl" style={{ zIndex: 1 }}>
       <MapContainer
         center={[userLocation.lat, userLocation.lng]}
         zoom={17}
-        style={{ height: '100%', width: '100%' }}
+        className="h-full w-full"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -162,98 +164,85 @@ export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComp
       </MapContainer>
 
       {/* 追加モーダル */}
-      {showModal && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            zIndex: 1000,
-            minWidth: '320px',
-          }}
-        >
-          <h2 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>
-            {MESSAGES.MAP.ADD_SMOKING_AREA}
-          </h2>
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '16px' }}>
-              <label
-                htmlFor="memo"
-                style={{ display: 'block', marginBottom: '4px', fontSize: '14px' }}
-              >
-                {MESSAGES.MAP.MEMO}
-              </label>
-              <textarea
-                id="memo"
-                value={memo}
-                onChange={(e) => setMemo(e.target.value)}
-                rows={3}
-                placeholder="例：屋外、灰皿あり"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  fontSize: '14px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  resize: 'vertical',
-                }}
-              />
-            </div>
+      <Modal
+        isOpen={showModal}
+        onClose={handleCancel}
+        title={MESSAGES.MAP.ADD_SMOKING_AREA}
+        size="sm"
+      >
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label htmlFor="memo" style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#94a3b8', marginBottom: '8px' }}>
+              {MESSAGES.MAP.MEMO}
+            </label>
+            <textarea
+              id="memo"
+              value={memo}
+              onChange={(e) => setMemo(e.target.value)}
+              rows={3}
+              placeholder="例：屋外、灰皿あり"
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#1e293b',
+                border: '1px solid #334155',
+                borderRadius: '8px',
+                color: '#f1f5f9',
+                fontSize: '14px',
+                outline: 'none',
+                transition: 'all 0.2s',
+                resize: 'vertical'
+              }}
+            />
+          </div>
 
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={handleCancel}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  backgroundColor: '#f0f0f0',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
-              >
-                {MESSAGES.MAP.CANCEL}
-              </button>
-              <button
-                type="submit"
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '14px',
-                  backgroundColor: '#0070f3',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                }}
-              >
-                {MESSAGES.MAP.SAVE}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* モーダル背景 */}
-      {showModal && (
-        <div
-          onClick={handleCancel}
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            zIndex: 999,
-          }}
-        />
-      )}
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={handleCancel}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#f1f5f9',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              {MESSAGES.MAP.CANCEL}
+            </button>
+            <button
+              type="submit"
+              style={{
+                padding: '8px 16px',
+                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+              }}
+            >
+              {MESSAGES.MAP.SAVE}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

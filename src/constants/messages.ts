@@ -53,6 +53,7 @@ export const MESSAGES = {
     LOGIN_ERROR: 'ログインエラー:',
     SIGNUP_ERROR: 'サインアップエラー:',
     GOOGLE_LOGIN_ERROR: 'Googleログインエラー:',
+    PASSWORD_MISMATCH: 'パスワードが一致しません',
   },
 
   // 成功メッセージ

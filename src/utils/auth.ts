@@ -118,3 +118,7 @@ const getAuthErrorMessage = (errorCode: string): string => {
       return '認証エラーが発生しました';
   }
 };
+
+// Aliases for backward compatibility
+export const signIn = signInWithEmail;
+export const signUp = signUpWithEmail;
