@@ -17,13 +17,11 @@ import { db } from './firebase';
 // 喫煙所データの型定義
 export interface SmokingArea {
   id?: string;
-  name: string;
-  address: string;
   latitude: number;
   longitude: number;
-  description?: string;
-  createdAt: Timestamp;
-  createdBy: string;
+  memo?: string;
+  createdById: string;
+  createdAt?: any;
 }
 
 // コレクション名

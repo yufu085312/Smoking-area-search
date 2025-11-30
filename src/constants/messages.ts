@@ -31,9 +31,18 @@ export const MESSAGES = {
   HOME: {
     TITLE: '喫煙所検索',
     DESCRIPTION: '近くの喫煙所を探しましょう',
-    ADD_SMOKING_AREA_TEST: '喫煙所を追加（テスト）',
-    SMOKING_AREA_LIST: '喫煙所リスト',
-    NO_SMOKING_AREAS: '喫煙所が登録されていません',
+  },
+
+  // 地図関連
+  MAP: {
+    CLICK_TO_ADD: '地図をクリックして喫煙所を追加',
+    ADD_SMOKING_AREA: '喫煙所を追加',
+    MEMO: 'メモ（任意）',
+    CANCEL: 'キャンセル',
+    SAVE: '保存',
+    LOADING_MAP: '地図を読み込み中...',
+    LOCATION_ERROR: '位置情報の取得に失敗しました',
+    CURRENT_LOCATION: '現在地',
   },
 
   // エラーメッセージ
