@@ -41,13 +41,17 @@ function MapClickHandler({
   return null;
 }
 
-// 地図の中心を更新するコンポーネント
-function MapUpdater({ center }: { center: [number, number] }) {
+// 初回のみ地図の中心を更新するコンポーネント
+function InitialMapUpdater({ center, shouldUpdate }: { center: [number, number], shouldUpdate: boolean }) {
   const map = useMapEvents({});
+  const [hasUpdated, setHasUpdated] = useState(false);
   
   useEffect(() => {
-    map.setView(center, map.getZoom());
-  }, [center, map]);
+    if (shouldUpdate && !hasUpdated) {
+      map.setView(center, map.getZoom());
+      setHasUpdated(true);
+    }
+  }, [shouldUpdate, hasUpdated, center, map]);
   
   return null;
 }
@@ -124,7 +128,7 @@ export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComp
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         
-        <MapUpdater center={[userLocation.lat, userLocation.lng]} />
+        <InitialMapUpdater center={[userLocation.lat, userLocation.lng]} shouldUpdate={locationObtained} />
         
         <MapClickHandler 
           onMapClick={handleMapClick} 
