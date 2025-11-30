@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmail, signInWithGoogle } from '@/utils/auth';
 import Link from 'next/link';
+import { MESSAGES } from '@/constants/messages';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function LoginPage() {
 
   return (
     <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px' }}>
-      <h1>ログイン</h1>
+      <h1>{MESSAGES.AUTH.LOGIN}</h1>
       
       <button
         onClick={handleGoogleSignIn}
@@ -71,17 +72,17 @@ export default function LoginPage() {
           <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
           <path fill="none" d="M0 0h48v48H0z"/>
         </svg>
-        Googleでログイン
+        {MESSAGES.AUTH.GOOGLE_LOGIN}
       </button>
 
       <div style={{ textAlign: 'center', margin: '20px 0', color: '#999' }}>
-        または
+        {MESSAGES.COMMON.OR}
       </div>
       
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <div>
           <label htmlFor="email" style={{ display: 'block', marginBottom: '5px' }}>
-            メールアドレス
+            {MESSAGES.AUTH.EMAIL}
           </label>
           <input
             id="email"
@@ -102,7 +103,7 @@ export default function LoginPage() {
 
         <div>
           <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>
-            パスワード
+            {MESSAGES.AUTH.PASSWORD}
           </label>
           <input
             id="password"
@@ -141,15 +142,15 @@ export default function LoginPage() {
             cursor: loading ? 'not-allowed' : 'pointer',
           }}
         >
-          {loading ? '処理中...' : 'ログイン'}
+          {loading ? MESSAGES.COMMON.PROCESSING : MESSAGES.AUTH.LOGIN}
         </button>
       </form>
 
       <div style={{ marginTop: '20px', textAlign: 'center' }}>
         <p>
-          アカウントをお持ちでないですか？{' '}
+          {MESSAGES.AUTH.NO_ACCOUNT}{' '}
           <Link href="/signup" style={{ color: '#0070f3' }}>
-            サインアップ
+            {MESSAGES.AUTH.SIGNUP}
           </Link>
         </p>
       </div>

@@ -10,6 +10,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { signOut } from '@/utils/auth';
 import Link from 'next/link';
+import { MESSAGES } from '@/constants/messages';
 
 export default function Home() {
   const router = useRouter();
@@ -24,7 +25,7 @@ export default function Home() {
         const areas = await getAllSmokingAreas();
         setSmokingAreas(areas);
       } catch (error) {
-        console.error('データの取得に失敗しました:', error);
+        console.error(MESSAGES.ERROR.DATA_FETCH_FAILED, error);
       } finally {
         setLoading(false);
       }
@@ -35,7 +36,7 @@ export default function Home() {
 
   const handleAddSmokingArea = async () => {
     if (!user) {
-      alert('ログインが必要です');
+      alert(MESSAGES.AUTH.LOGIN_REQUIRED);
       router.push('/login');
       return;
     }
@@ -57,7 +58,7 @@ export default function Home() {
       const areas = await getAllSmokingAreas();
       setSmokingAreas(areas);
     } catch (error) {
-      console.error('喫煙所の追加に失敗しました:', error);
+      console.error(MESSAGES.ERROR.SMOKING_AREA_ADD_FAILED, error);
     }
   };
 
@@ -66,22 +67,22 @@ export default function Home() {
       await signOut();
       router.push('/login');
     } catch (error) {
-      console.error('ログアウトエラー:', error);
+      console.error(MESSAGES.ERROR.LOGOUT_ERROR, error);
     }
   };
 
   if (authLoading || loading) {
-    return <div>読み込み中...</div>;
+    return <div>{MESSAGES.COMMON.LOADING}</div>;
   }
 
   return (
     <div style={{ padding: '20px' }}>
       <header style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>喫煙所検索</h1>
+        <h1>{MESSAGES.HOME.TITLE}</h1>
         <div>
           {user ? (
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <span>ようこそ, {user.email}</span>
+              <span>{MESSAGES.AUTH.WELCOME}, {user.email}</span>
               <button
                 onClick={handleLogout}
                 style={{
@@ -93,16 +94,16 @@ export default function Home() {
                   cursor: 'pointer',
                 }}
               >
-                ログアウト
+                {MESSAGES.AUTH.LOGOUT}
               </button>
             </div>
           ) : (
             <div style={{ display: 'flex', gap: '10px' }}>
               <Link href="/login" style={{ padding: '8px 16px', backgroundColor: '#0070f3', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
-                ログイン
+                  {MESSAGES.AUTH.LOGIN}
               </Link>
               <Link href="/signup" style={{ padding: '8px 16px', backgroundColor: '#28a745', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>
-                サインアップ
+                  {MESSAGES.AUTH.SIGNUP}
               </Link>
             </div>
           )}
@@ -110,7 +111,7 @@ export default function Home() {
       </header>
 
       <main>
-        <p>近くの喫煙所を探しましょう</p>
+        <p>{MESSAGES.HOME.DESCRIPTION}</p>
         
         <button
           onClick={handleAddSmokingArea}
@@ -124,12 +125,12 @@ export default function Home() {
             cursor: user ? 'pointer' : 'not-allowed',
           }}
         >
-          喫煙所を追加（テスト）
+          {MESSAGES.HOME.ADD_SMOKING_AREA_TEST}
         </button>
         
-        <h2 style={{ marginTop: '30px' }}>喫煙所リスト</h2>
+        <h2 style={{ marginTop: '30px' }}>{MESSAGES.HOME.SMOKING_AREA_LIST}</h2>
         {smokingAreas.length === 0 ? (
-          <p>喫煙所が登録されていません</p>
+          <p>{MESSAGES.HOME.NO_SMOKING_AREAS}</p>
         ) : (
           <ul>
             {smokingAreas.map((area) => (

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signUpWithEmail, signInWithGoogle } from '@/utils/auth';
 import Link from 'next/link';
+import { MESSAGES } from '@/constants/messages';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -18,7 +19,7 @@ export default function SignupPage() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('パスワードが一致しません');
+      setError(MESSAGES.AUTH.PASSWORD_MISMATCH);
       return;
     }
 
@@ -50,7 +51,7 @@ export default function SignupPage() {
 
   return (
     <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px' }}>
-      <h1>サインアップ</h1>
+      <h1>{MESSAGES.AUTH.SIGNUP}</h1>
       
       <button
         onClick={handleGoogleSignIn}
@@ -78,17 +79,17 @@ export default function SignupPage() {
           <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
           <path fill="none" d="M0 0h48v48H0z"/>
         </svg>
-        Googleでサインアップ
+        {MESSAGES.AUTH.GOOGLE_SIGNUP}
       </button>
 
       <div style={{ textAlign: 'center', margin: '20px 0', color: '#999' }}>
-        または
+        {MESSAGES.COMMON.OR}
       </div>
       
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         <div>
           <label htmlFor="email" style={{ display: 'block', marginBottom: '5px' }}>
-            メールアドレス
+            {MESSAGES.AUTH.EMAIL}
           </label>
           <input
             id="email"
@@ -109,7 +110,7 @@ export default function SignupPage() {
 
         <div>
           <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>
-            パスワード
+            {MESSAGES.AUTH.PASSWORD}
           </label>
           <input
             id="password"
@@ -131,7 +132,7 @@ export default function SignupPage() {
 
         <div>
           <label htmlFor="confirmPassword" style={{ display: 'block', marginBottom: '5px' }}>
-            パスワード（確認）
+            {MESSAGES.AUTH.CONFIRM_PASSWORD}
           </label>
           <input
             id="confirmPassword"
@@ -170,15 +171,15 @@ export default function SignupPage() {
             cursor: loading ? 'not-allowed' : 'pointer',
           }}
         >
-          {loading ? '処理中...' : 'サインアップ'}
+          {loading ? MESSAGES.COMMON.PROCESSING : MESSAGES.AUTH.SIGNUP}
         </button>
       </form>
 
       <div style={{ marginTop: '20px', textAlign: 'center' }}>
         <p>
-          既にアカウントをお持ちですか？{' '}
+          {MESSAGES.AUTH.HAS_ACCOUNT}{' '}
           <Link href="/login" style={{ color: '#0070f3' }}>
-            ログイン
+            {MESSAGES.AUTH.LOGIN}
           </Link>
         </p>
       </div>
