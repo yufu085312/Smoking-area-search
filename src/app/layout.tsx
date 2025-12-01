@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "喫煙所サーチ",
 };
- 
+
 export default function RootLayout({
   children,
 }: {

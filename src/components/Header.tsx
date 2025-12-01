@@ -40,20 +40,63 @@ export default function Header() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
             <div className="w-8 h-8 bg-gradient-to-br from-primary to-secondary rounded-lg flex items-center justify-center transform group-hover:scale-110 transition-transform"
-                 style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{ width: '32px', height: '32px', background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: '20px', height: '20px', color: 'white' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
-                  style={{ fontSize: '20px', fontWeight: 'bold', background: 'linear-gradient(to right, #6366f1, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span
+              style={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                background: 'linear-gradient(to right, #6366f1, #8b5cf6)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+              className="sm-show-inline text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+            >
               {MESSAGES.HOME.TITLE}
             </span>
           </Link>
 
           {/* Navigation Buttons (Always Visible) */}
           <nav className="flex items-center space-x-4" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Legal Documents Icons */}
+            <Link
+              href="/terms"
+              title="利用規約・免責事項"
+              style={{
+                color: '#94a3b8',
+                transition: 'color 0.2s',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#6366f1'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#94a3b8'}
+            >
+              <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </Link>
+
+            <Link
+              href="/privacy"
+              title="プライバシーポリシー"
+              style={{
+                color: '#94a3b8',
+                transition: 'color 0.2s',
+                display: 'flex',
+                alignItems: 'center'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.color = '#6366f1'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#94a3b8'}
+            >
+              <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </Link>
+
             {user ? (
               <div className="flex items-center space-x-4" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span className="text-sm text-text-secondary hidden md:inline" style={{ color: '#94a3b8', fontSize: '14px' }}>
@@ -78,16 +121,17 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center space-x-3" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div className="flex items-center space-x-3" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Link href="/login" style={{ textDecoration: 'none' }}>
                   <div
                     style={{
-                      padding: '8px 16px',
+                        padding: '6px 12px',
                       color: '#f1f5f9',
-                      fontSize: '14px',
+                        fontSize: '13px',
                       cursor: 'pointer',
                       borderRadius: '8px',
-                      transition: 'all 0.2s'
+                        transition: 'all 0.2s',
+                        whiteSpace: 'nowrap'
                     }}
                     onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
                     onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -95,26 +139,28 @@ export default function Header() {
                     {MESSAGES.AUTH.LOGIN}
                   </div>
                 </Link>
+
                 <Link href="/signup" style={{ textDecoration: 'none' }}>
                   <div
                     style={{
-                      padding: '8px 16px',
+                        padding: '6px 12px',
                       background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                       color: 'white',
-                      fontSize: '14px',
+                        fontSize: '13px',
                       fontWeight: 500,
+                        cursor: 'pointer',
                       borderRadius: '8px',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                      transition: 'all 0.2s'
+                        transition: 'all 0.2s',
+                        boxShadow: '0 2px 8px rgba(99, 102, 241, 0.3)',
+                        whiteSpace: 'nowrap'
                     }}
                     onMouseOver={(e) => {
                       e.currentTarget.style.transform = 'translateY(-1px)';
-                      e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.4)';
                     }}
                     onMouseOut={(e) => {
                       e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(99, 102, 241, 0.3)';
                     }}
                   >
                     {MESSAGES.AUTH.SIGNUP}
