@@ -16,7 +16,7 @@ import Header from '@/components/Header';
 const MapComponent = dynamic(() => import('@/components/MapComponent'), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-[600px] glass rounded-xl">
+    <div className="flex items-center justify-center h-[50vh] md:h-[600px] glass rounded-xl">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
         <p className="text-text-secondary">{MESSAGES.MAP.LOADING_MAP}</p>
@@ -95,17 +95,11 @@ export default function Home() {
     <div className="min-h-screen">
       <Header />
 
-      <main className="container py-8 animate-fadeIn">
+      <main className="container py-4 md:py-8 animate-fadeIn">
         {/* Hero Section */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
-            {MESSAGES.HOME.TITLE}
-          </h1>
-          <p className="text-text-secondary text-lg mb-2">
+        <div className="text-center" style={{ padding: '40px 0' }}>
+          <p className="text-text-secondary text-lg">
             {MESSAGES.HOME.DESCRIPTION}
-          </p>
-          <p className="text-text-muted text-sm">
-            {MESSAGES.MAP.CLICK_TO_ADD}
           </p>
         </div>
 
