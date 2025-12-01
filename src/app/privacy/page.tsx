@@ -142,7 +142,7 @@ export default function PrivacyPage() {
               </div>
               <div className="ml-14">
                 <p className="mb-4 text-base" style={{ lineHeight: '1.8' }}>
-                  当社は、法令に基づく場合を除き、ユーザーの同意なく個人情報を第三者に提供することはありません。ただし、以下の外部サービスを利用してデータを処理する場合があります。
+                  法令に基づく場合を除き、ユーザーの同意なく個人情報を第三者に提供することはありません。ただし、以下の外部サービスを利用してデータを処理する場合があります。
                 </p>
                 <div className="space-y-4">
                   <div className="p-4 rounded-lg bg-orange-900/20">

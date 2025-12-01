@@ -136,7 +136,7 @@ function RecenterControl({ lat, lng }: { lat: number; lng: number }) {
   );
 }
 
-// 追加モード切り替えボタンのコンポーネート
+// 追加モード切り替えボタンのコンポーネント
 function AddModeToggleButton({ isAddMode, onToggle }: { isAddMode: boolean; onToggle: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -146,6 +146,9 @@ function AddModeToggleButton({ isAddMode, onToggle }: { isAddMode: boolean; onTo
       L.DomEvent.disableClickPropagation(containerRef.current);
     }
   }, []);
+
+  // 追加モード中は非表示（ConfirmLocationControls側にキャンセルボタンがあるため）
+  if (isAddMode) return null;
 
   return (
     <div
@@ -160,60 +163,39 @@ function AddModeToggleButton({ isAddMode, onToggle }: { isAddMode: boolean; onTo
       <button
         onClick={() => onToggle()}
         style={{
-          width: isAddMode ? 'auto' : '48px',
+          width: '48px',
           height: '48px',
-          padding: isAddMode ? '0 16px' : '0',
           borderRadius: '24px',
-          background: isAddMode
-            ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-            : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
           border: 'none',
-          boxShadow: isAddMode
-            ? '0 4px 12px rgba(239, 68, 68, 0.4)'
-            : '0 4px 12px rgba(99, 102, 241, 0.4)',
+          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '8px',
           transition: 'all 0.3s',
-          fontSize: '14px',
-          fontWeight: 500,
           color: 'white'
         }}
         onMouseOver={(e) => {
           e.currentTarget.style.transform = 'scale(1.05)';
-          e.currentTarget.style.boxShadow = isAddMode
-            ? '0 6px 16px rgba(239, 68, 68, 0.6)'
-            : '0 6px 16px rgba(99, 102, 241, 0.6)';
+          e.currentTarget.style.boxShadow = '0 6px 16px rgba(99, 102, 241, 0.6)';
         }}
         onMouseOut={(e) => {
           e.currentTarget.style.transform = 'scale(1)';
-          e.currentTarget.style.boxShadow = isAddMode
-            ? '0 4px 12px rgba(239, 68, 68, 0.4)'
-            : '0 4px 12px rgba(99, 102, 241, 0.4)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.4)';
         }}
-        title={isAddMode ? '追加モードをキャンセル' : '喫煙所を追加'}
+        title="喫煙所を追加"
       >
-        {isAddMode ? (
-          <>
-            <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            キャンセル
-          </>
-        ) : (
-          <svg style={{ width: '24px', height: '24px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-        )}
+        <svg style={{ width: '24px', height: '24px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
       </button>
     </div>
   );
 }
 
-// 決定ボタンコンポーネント
-function ConfirmLocationButton({ onConfirm }: { onConfirm: () => void }) {
+// 決定・キャンセルボタンコンポーネント
+function ConfirmLocationControls({ onConfirm, onCancel }: { onConfirm: () => void, onCancel: () => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // マウント時にLeafletのクリック伝播を完全に無効化
@@ -228,15 +210,22 @@ function ConfirmLocationButton({ onConfirm }: { onConfirm: () => void }) {
       ref={containerRef}
       style={{
         position: 'absolute',
-        bottom: '140px',
+        bottom: '30px',
         left: '50%',
         transform: 'translateX(-50%)',
-        zIndex: 1000
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '12px',
+        width: '100%',
+        pointerEvents: 'none' // コンテナ自体はクリックを透過
       }}
     >
       <button
         onClick={onConfirm}
         style={{
+          pointerEvents: 'auto',
           padding: '12px 24px',
           borderRadius: '24px',
           background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
@@ -266,6 +255,41 @@ function ConfirmLocationButton({ onConfirm }: { onConfirm: () => void }) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
         この場所に追加
+      </button>
+
+      <button
+        onClick={onCancel}
+        style={{
+          pointerEvents: 'auto',
+          padding: '8px 20px',
+          borderRadius: '20px',
+          background: 'rgba(15, 23, 42, 0.8)',
+          backdropFilter: 'blur(4px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '6px',
+          transition: 'all 0.3s',
+          fontSize: '14px',
+          fontWeight: 500,
+          color: '#cbd5e1'
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.9)';
+          e.currentTarget.style.color = 'white';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.background = 'rgba(15, 23, 42, 0.8)';
+          e.currentTarget.style.color = '#cbd5e1';
+        }}
+      >
+        <svg style={{ width: '16px', height: '16px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
+        キャンセル
       </button>
     </div>
   );
@@ -459,11 +483,16 @@ export default function MapComponent({
             {/* Floating Recenter Button */}
             {locationObtained && <RecenterControl lat={userLocation.lat} lng={userLocation.lng} />}
 
-            {/* Add Mode Toggle Button */}
+            {/* Add Mode Toggle Button (Hidden when in add mode) */}
             <AddModeToggleButton isAddMode={isAddMode} onToggle={() => setIsAddMode(!isAddMode)} />
 
-            {/* Confirm Location Button (Only in Add Mode) */}
-            {isAddMode && <ConfirmLocationButton onConfirm={handleConfirmLocation} />}
+            {/* Confirm & Cancel Controls (Only in Add Mode) */}
+            {isAddMode && (
+              <ConfirmLocationControls
+                onConfirm={handleConfirmLocation}
+                onCancel={() => setIsAddMode(false)}
+              />
+            )}
 
           </MapContainer>
 
@@ -480,10 +509,8 @@ export default function MapComponent({
               }}
             >
               <div className="custom-pin-icon">
-                <div className="pin-container">
-                  <div className="pin-top" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}></div>
+                <div className="pin-top" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}></div>
                   <div className="pin-bottom" style={{ borderTopColor: '#059669' }}></div>
-                </div>
               </div>
             </div>
           )}
@@ -496,7 +523,9 @@ export default function MapComponent({
                 top: '20px',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                padding: '12px 24px',
+                width: '90%',
+                maxWidth: '600px',
+                padding: '12px 20px',
                 background: 'rgba(15, 23, 42, 0.8)',
                 backdropFilter: 'blur(8px)',
                 borderRadius: '24px',
@@ -508,13 +537,15 @@ export default function MapComponent({
                 fontWeight: 500,
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '8px',
                 animation: 'slideDown 0.3s ease-out',
-                width: 'max-content'
+                whiteSpace: 'normal',
+                textAlign: 'center'
               }}
             >
-              <span style={{ color: '#10b981' }}>📍</span>
-              地図を動かして追加したい場所にピンを合わせてください
+              <span style={{ color: '#10b981', flexShrink: 0 }}>📍</span>
+              <span>地図を動かして追加したい場所にピンを合わせてください</span>
             </div>
           )}
         </div>
