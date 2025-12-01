@@ -292,11 +292,13 @@ export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComp
       <MapContainer
         center={[userLocation.lat, userLocation.lng]}
         zoom={17}
+            maxZoom={21}
         className="h-full w-full"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={21}
         />
         
         <InitialMapUpdater center={[userLocation.lat, userLocation.lng]} shouldUpdate={locationObtained} />

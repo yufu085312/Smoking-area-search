@@ -29,7 +29,7 @@ export const MESSAGES = {
 
   // ホームページ
   HOME: {
-    TITLE: '喫煙所検索',
+    TITLE: '喫煙所サーチ',
     DESCRIPTION: '近くの喫煙所を探しましょう',
   },
 
