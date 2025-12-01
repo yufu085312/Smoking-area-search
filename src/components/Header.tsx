@@ -22,7 +22,7 @@ export default function Header() {
 
   return (
     <header 
-      className="sticky top-0 z-40 w-full animate-slideDown"
+      className="sticky top-0 z-[1001] w-full animate-slideDown"
       style={{
         backgroundColor: 'rgba(30, 41, 59, 0.95)',
         backdropFilter: 'blur(10px)',
@@ -31,7 +31,8 @@ export default function Header() {
         display: 'flex',
         alignItems: 'center',
         position: 'sticky',
-        top: 0
+        top: 0,
+        zIndex: 1001
       }}
     >
       <div className="container mx-auto px-4" style={{ width: '100%', maxWidth: '1280px', margin: '0 auto' }}>
