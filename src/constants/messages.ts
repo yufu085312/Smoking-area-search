@@ -35,11 +35,10 @@ export const MESSAGES = {
 
   // 地図関連
   MAP: {
-    CLICK_TO_ADD: '地図をクリックして喫煙所を追加',
     ADD_SMOKING_AREA: '喫煙所を追加',
     MEMO: 'メモ（任意）',
     CANCEL: 'キャンセル',
-    SAVE: '保存',
+    SAVE: '追加',
     LOADING_MAP: '地図を読み込み中...',
     LOCATION_ERROR: '位置情報の取得に失敗しました',
     CURRENT_LOCATION: '現在地',
