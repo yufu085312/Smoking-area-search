@@ -97,7 +97,7 @@ export default function Home() {
 
       <main className="container py-4 md:py-8 animate-fadeIn">
         {/* Hero Section */}
-        <div className="text-center" style={{ padding: '40px 0' }}>
+        <div className="text-center" style={{ padding: '20px 0' }}>
           <p className="text-text-secondary text-lg">
             {MESSAGES.HOME.DESCRIPTION}
           </p>
