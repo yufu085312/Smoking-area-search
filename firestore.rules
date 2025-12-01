@@ -2,13 +2,28 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // バリデーション関数
+    function isValidSmokingArea() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['latitude', 'longitude', 'createdById', 'createdAt']) &&
+             data.latitude is number && data.latitude >= -90 && data.latitude <= 90 &&
+             data.longitude is number && data.longitude >= -180 && data.longitude <= 180 &&
+             data.createdById is string && data.createdById == request.auth.uid &&
+             data.createdAt is timestamp &&
+             (!data.keys().hasAny(['memo']) || (data.memo is string && data.memo.size() <= 500));
+    }
+
     // 喫煙所データのコレクション
     match /smokingAreas/{areaId} {
       // 誰でも読み取り可能
       allow read: if true;
       
       // 認証済みユーザーのみ作成・更新・削除可能
-      allow create, update, delete: if request.auth != null;
+      // 作成・更新時はデータのバリデーションを行う
+      allow create: if request.auth != null && isValidSmokingArea();
+      allow update: if request.auth != null && isValidSmokingArea();
+      allow delete: if request.auth != null;
     }
     
     // ユーザーデータのコレクション
