@@ -431,6 +431,11 @@ export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComp
             />
           </div>
 
+          <div style={{ fontSize: '12px', color: '#94a3b8', padding: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '6px' }}>
+            <p style={{ marginBottom: '4px', fontWeight: 'bold', color: '#f87171' }}>⚠️ 注意事項</p>
+            投稿内容が正確であること、法令を遵守していることを確認してください。不適切な投稿は削除される場合があります。
+          </div>
+
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
             <button
               type="button"
