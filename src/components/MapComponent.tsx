@@ -20,6 +20,7 @@ L.Icon.Default.mergeOptions({
 interface MapComponentProps {
   smokingAreas: SmokingArea[];
   onAddSmokingArea: (lat: number, lng: number, memo?: string) => void;
+  onBoundsChange?: (bounds: { minLat: number, maxLat: number, minLng: number, maxLng: number }) => void;
 }
 
 // カスタム3Dピンアイコンを作成
@@ -40,24 +41,33 @@ const createCustomPinIcon = () => {
 
 // 地図クリックイベントとズームイベントを処理するコンポーネント
 function MapClickHandler({ 
-  onMapClick, 
   onZoomChange,
-  isAddMode
+  onBoundsChange,
 }: { 
-  onMapClick: (lat: number, lng: number) => void;
   onZoomChange: (zoom: number) => void;
-    isAddMode: boolean;
+    onBoundsChange?: (bounds: L.LatLngBounds) => void;
 }) {
   const map = useMapEvents({
-    click(e) {
-      if (isAddMode) {
-        onMapClick(e.latlng.lat, e.latlng.lng);
-      }
-    },
     zoomend() {
       onZoomChange(map.getZoom());
+      if (onBoundsChange) {
+        onBoundsChange(map.getBounds());
+      }
+    },
+    moveend() {
+      if (onBoundsChange) {
+        onBoundsChange(map.getBounds());
+      }
     },
   });
+
+  // 初期表示時にも範囲を通知
+  useEffect(() => {
+    if (onBoundsChange) {
+      onBoundsChange(map.getBounds());
+    }
+  }, [map, onBoundsChange]);
+
   return null;
 }
 
@@ -106,20 +116,28 @@ function RecenterControl({ lat, lng }: { lat: number; lng: number }) {
           e.currentTarget.style.transform = 'scale(1)';
           e.currentTarget.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.4)';
         }}
-        title="現在地に移動"
+        title={MESSAGES.MAP.CURRENT_LOCATION}
       >
-        <svg style={{ width: '24px', height: '24px', color: 'white' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
         </svg>
       </button>
     </div>
   );
 }
 
-// 追加モード切り替えボタンのコンポーネント
+// 追加モード切り替えボタンのコンポーネート
 function AddModeToggleButton({ isAddMode, onToggle }: { isAddMode: boolean; onToggle: () => void }) {
-  const map = useMapEvents({});
   const containerRef = useRef<HTMLDivElement>(null);
 
   // マウント時にLeafletのクリック伝播を完全に無効化
@@ -147,11 +165,11 @@ function AddModeToggleButton({ isAddMode, onToggle }: { isAddMode: boolean; onTo
           padding: isAddMode ? '0 16px' : '0',
           borderRadius: '24px',
           background: isAddMode
-            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+            ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
             : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
           border: 'none',
           boxShadow: isAddMode
-            ? '0 4px 12px rgba(16, 185, 129, 0.4)'
+            ? '0 4px 12px rgba(239, 68, 68, 0.4)'
             : '0 4px 12px rgba(99, 102, 241, 0.4)',
           cursor: 'pointer',
           display: 'flex',
@@ -166,13 +184,13 @@ function AddModeToggleButton({ isAddMode, onToggle }: { isAddMode: boolean; onTo
         onMouseOver={(e) => {
           e.currentTarget.style.transform = 'scale(1.05)';
           e.currentTarget.style.boxShadow = isAddMode
-            ? '0 6px 16px rgba(16, 185, 129, 0.6)'
+            ? '0 6px 16px rgba(239, 68, 68, 0.6)'
             : '0 6px 16px rgba(99, 102, 241, 0.6)';
         }}
         onMouseOut={(e) => {
           e.currentTarget.style.transform = 'scale(1)';
           e.currentTarget.style.boxShadow = isAddMode
-            ? '0 4px 12px rgba(16, 185, 129, 0.4)'
+            ? '0 4px 12px rgba(239, 68, 68, 0.4)'
             : '0 4px 12px rgba(99, 102, 241, 0.4)';
         }}
         title={isAddMode ? '追加モードをキャンセル' : '喫煙所を追加'}
@@ -194,6 +212,65 @@ function AddModeToggleButton({ isAddMode, onToggle }: { isAddMode: boolean; onTo
   );
 }
 
+// 決定ボタンコンポーネント
+function ConfirmLocationButton({ onConfirm }: { onConfirm: () => void }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // マウント時にLeafletのクリック伝播を完全に無効化
+  useEffect(() => {
+    if (containerRef.current) {
+      L.DomEvent.disableClickPropagation(containerRef.current);
+    }
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        position: 'absolute',
+        bottom: '140px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 1000
+      }}
+    >
+      <button
+        onClick={onConfirm}
+        style={{
+          padding: '12px 24px',
+          borderRadius: '24px',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          border: 'none',
+          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          transition: 'all 0.3s',
+          fontSize: '16px',
+          fontWeight: 600,
+          color: 'white',
+          whiteSpace: 'nowrap'
+        }}
+        onMouseOver={(e) => {
+          e.currentTarget.style.transform = 'scale(1.05)';
+          e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.6)';
+        }}
+        onMouseOut={(e) => {
+          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+        }}
+      >
+        <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+        </svg>
+        この場所に追加
+      </button>
+    </div>
+  );
+}
+
 // 初回のみ地図の中心を更新するコンポーネント
 function InitialMapUpdater({ center, shouldUpdate }: { center: [number, number], shouldUpdate: boolean }) {
   const map = useMapEvents({});
@@ -209,7 +286,26 @@ function InitialMapUpdater({ center, shouldUpdate }: { center: [number, number],
   return null;
 }
 
-export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComponentProps) {
+// 中心座標を取得するためのコンポーネント
+function CenterCoordinateTracker({ onCenterChange }: { onCenterChange: (lat: number, lng: number) => void }) {
+  const map = useMapEvents({
+    move() {
+      const center = map.getCenter();
+      onCenterChange(center.lat, center.lng);
+    },
+    moveend() {
+      const center = map.getCenter();
+      onCenterChange(center.lat, center.lng);
+    }
+  });
+  return null;
+}
+
+export default function MapComponent({
+  smokingAreas,
+  onAddSmokingArea,
+  onBoundsChange
+}: MapComponentProps) {
   const [showModal, setShowModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [memo, setMemo] = useState('');
@@ -220,20 +316,24 @@ export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComp
   }); // デフォルトは東京
   const [locationObtained, setLocationObtained] = useState(false);
   const [isAddMode, setIsAddMode] = useState(false);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
 
   // ユーザーの現在地を取得
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
+          const newLocation = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-          });
+          };
+          setUserLocation(newLocation);
+          setMapCenter(newLocation);
           setLocationObtained(true);
         },
         (error) => {
           // エラー時は東京をデフォルトとして使用
+          setMapCenter(userLocation);
         },
         {
           enableHighAccuracy: true,
@@ -241,12 +341,16 @@ export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComp
           maximumAge: 0
         }
       );
+    } else {
+      setMapCenter(userLocation);
     }
   }, []);
 
-  const handleMapClick = (lat: number, lng: number) => {
-    setSelectedPosition({ lat, lng });
-    setShowModal(true);
+  const handleConfirmLocation = () => {
+    if (mapCenter) {
+      setSelectedPosition(mapCenter);
+      setShowModal(true);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -272,6 +376,17 @@ export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComp
     setIsAddMode(false);
   };
 
+  const handleBoundsChange = (bounds: L.LatLngBounds) => {
+    if (onBoundsChange) {
+      onBoundsChange({
+        minLat: bounds.getSouth(),
+        maxLat: bounds.getNorth(),
+        minLng: bounds.getWest(),
+        maxLng: bounds.getEast(),
+      });
+    }
+  };
+
   return (
     <div style={{ position: 'relative' }}>
       {/* Gradient Border Container */}
@@ -289,76 +404,57 @@ export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComp
           backgroundColor: '#1e293b',
           position: 'relative'
         }}>
-      <MapContainer
-        center={[userLocation.lat, userLocation.lng]}
-        zoom={17}
-            maxZoom={21}
-        className="h-full w-full"
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              maxZoom={21}
-        />
-        
-        <InitialMapUpdater center={[userLocation.lat, userLocation.lng]} shouldUpdate={locationObtained} />
-        
-        <MapClickHandler 
-          onMapClick={handleMapClick} 
-          onZoomChange={setCurrentZoom}
-              isAddMode={isAddMode}
-        />
-
-        {/* 現在地マーカー */}
-        {locationObtained && (
-          <CircleMarker
+          <MapContainer
             center={[userLocation.lat, userLocation.lng]}
-            radius={10}
-            pathOptions={{
-              color: 'white',
-              fillColor: '#4285F4',
-              fillOpacity: 0.9,
-              weight: 3,
-            }}
+            zoom={17}
+            maxZoom={21}
+            className="h-full w-full"
           >
-            <Tooltip direction="top" offset={[0, -10]} opacity={0.9} permanent={false}>
-              {MESSAGES.MAP.CURRENT_LOCATION}
-            </Tooltip>
-          </CircleMarker>
-        )}
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              maxZoom={21}
+            />
 
-            {/* 一時的な選択位置マーカー（追加モード時） */}
-            {selectedPosition && isAddMode && (
+            <InitialMapUpdater center={[userLocation.lat, userLocation.lng]} shouldUpdate={locationObtained} />
+            <CenterCoordinateTracker onCenterChange={(lat, lng) => setMapCenter({ lat, lng })} />
+
+            <MapClickHandler 
+              onZoomChange={setCurrentZoom}
+              onBoundsChange={handleBoundsChange}
+            />
+
+            {/* 現在地マーカー */}
+            {locationObtained && (
               <CircleMarker
-                center={[selectedPosition.lat, selectedPosition.lng]}
-                radius={12}
+                center={[userLocation.lat, userLocation.lng]}
+                radius={10}
                 pathOptions={{
-                  color: '#10b981',
-                  fillColor: '#10b981',
-                  fillOpacity: 0.6,
+                  color: 'white',
+                  fillColor: '#4285F4',
+                  fillOpacity: 0.9,
                   weight: 3,
                 }}
               >
-                <Tooltip direction="top" offset={[0, -15]} opacity={0.9} permanent={true}>
-                  ここに追加
+                <Tooltip direction="top" offset={[0, -10]} opacity={0.9} permanent={false}>
+                  {MESSAGES.MAP.CURRENT_LOCATION}
                 </Tooltip>
               </CircleMarker>
             )}
 
-        {smokingAreas.map((area) => (
-          <Marker
-            key={area.id}
-            position={[area.latitude, area.longitude]}
-            icon={createCustomPinIcon()}
-          >
-            {area.memo && currentZoom >= 17 && (
-              <Tooltip direction="top" offset={[0, -40]} opacity={0.9} permanent={true}>
-                {area.memo}
-              </Tooltip>
-            )}
-          </Marker>
-        ))}
-
+            {smokingAreas.map((area) => (
+              <Marker
+                key={area.id}
+                position={[area.latitude, area.longitude]}
+                icon={createCustomPinIcon()}
+              >
+                {area.memo && currentZoom >= 17 && (
+                  <Tooltip direction="top" offset={[0, -40]} opacity={0.9} permanent={true}>
+                    {area.memo}
+                  </Tooltip>
+                )}
+              </Marker>
+            ))}
 
             {/* Floating Recenter Button */}
             {locationObtained && <RecenterControl lat={userLocation.lat} lng={userLocation.lng} />}
@@ -366,35 +462,61 @@ export default function MapComponent({ smokingAreas, onAddSmokingArea }: MapComp
             {/* Add Mode Toggle Button */}
             <AddModeToggleButton isAddMode={isAddMode} onToggle={() => setIsAddMode(!isAddMode)} />
 
-            {/* Add Mode Help Message */}
-            {isAddMode && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '20px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  padding: '12px 24px',
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  borderRadius: '24px',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
-                  zIndex: 1000,
-                  color: 'white',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  animation: 'slideDown 0.3s ease-out'
-                }}
-              >
-                <svg style={{ width: '20px', height: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-                </svg>
-              </div>
-            )}
-      </MapContainer>
+            {/* Confirm Location Button (Only in Add Mode) */}
+            {isAddMode && <ConfirmLocationButton onConfirm={handleConfirmLocation} />}
 
+          </MapContainer>
+
+          {/* Center Fixed Pin (Overlay) */}
+          {isAddMode && (
+            <div 
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -100%)', // Pin tip at center
+                zIndex: 1000,
+                pointerEvents: 'none'
+              }}
+            >
+              <div className="custom-pin-icon">
+                <div className="pin-container">
+                  <div className="pin-top" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}></div>
+                  <div className="pin-bottom" style={{ borderTopColor: '#059669' }}></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add Mode Help Message */}
+          {isAddMode && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                padding: '12px 24px',
+                background: 'rgba(15, 23, 42, 0.8)',
+                backdropFilter: 'blur(8px)',
+                borderRadius: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+                zIndex: 1000,
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                animation: 'slideDown 0.3s ease-out',
+                width: 'max-content'
+              }}
+            >
+              <span style={{ color: '#10b981' }}>📍</span>
+              地図を動かして追加したい場所にピンを合わせてください
+            </div>
+          )}
         </div>
       </div>
 
