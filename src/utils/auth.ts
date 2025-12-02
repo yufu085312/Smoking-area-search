@@ -2,6 +2,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  deleteUser,
   sendPasswordResetEmail,
   GoogleAuthProvider,
   signInWithPopup,
@@ -94,6 +95,19 @@ export const resetPassword = async (email: string): Promise<void> => {
 };
 
 /**
+ * アカウント削除
+ */
+export const deleteAccount = async (user: User): Promise<void> => {
+  try {
+    await deleteUser(user);
+    console.log('アカウント削除成功');
+  } catch (error: any) {
+    console.error('アカウント削除エラー:', error);
+    throw new Error(getAuthErrorMessage(error.code));
+  }
+};
+
+/**
  * Firebase Authのエラーコードを日本語メッセージに変換
  */
 const getAuthErrorMessage = (errorCode: string): string => {
@@ -114,6 +128,8 @@ const getAuthErrorMessage = (errorCode: string): string => {
       return 'パスワードが正しくありません';
     case 'auth/too-many-requests':
       return 'リクエストが多すぎます。しばらく待ってから再試行してください';
+    case 'auth/requires-recent-login':
+      return 'セキュリティのため、再ログインが必要です';
     default:
       return '認証エラーが発生しました';
   }
