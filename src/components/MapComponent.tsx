@@ -509,8 +509,10 @@ export default function MapComponent({
               }}
             >
               <div className="custom-pin-icon">
-                <div className="pin-top" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}></div>
+                <div className="pin-container">
+                  <div className="pin-top" style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}></div>
                   <div className="pin-bottom" style={{ borderTopColor: '#059669' }}></div>
+                </div>
               </div>
             </div>
           )}
