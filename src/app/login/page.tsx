@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signIn, signInWithGoogle } from '@/utils/auth';
+import { signIn, signInWithGoogle, resetPassword } from '@/utils/auth';
 import { MESSAGES } from '@/constants/messages';
 import Button from '@/components/ui/Button';
 
@@ -13,6 +13,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetSuccess, setResetSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +41,26 @@ export default function LoginPage() {
       router.push('/');
     } catch (error: any) {
       setError(error.message || MESSAGES.ERROR.LOGIN_ERROR);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      await resetPassword(resetEmail);
+      setResetSuccess(true);
+      setTimeout(() => {
+        setShowResetModal(false);
+        setResetSuccess(false);
+        setResetEmail('');
+      }, 3000);
+    } catch (error: any) {
+      setError(error.message || 'パスワードリセットに失敗しました');
     } finally {
       setLoading(false);
     }
@@ -198,6 +221,25 @@ export default function LoginPage() {
               />
             </div>
 
+            {/* Forgot Password Link */}
+            <div style={{ textAlign: 'right' }}>
+              <button
+                type="button"
+                onClick={() => setShowResetModal(true)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#6366f1',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                  textDecoration: 'none',
+                  padding: 0
+                }}
+              >
+                {MESSAGES.AUTH.FORGOT_PASSWORD}
+              </button>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -282,6 +324,164 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
+      {/* Password Reset Modal */}
+      {showResetModal && (
+        <div
+          onClick={() => {
+            setShowResetModal(false);
+            setResetSuccess(false);
+            setError('');
+          }}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '20px'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: '#1e293b',
+              borderRadius: '16px',
+              maxWidth: '500px',
+              width: '100%',
+              padding: '32px',
+              position: 'relative',
+              border: '1px solid rgba(255, 255, 255, 0.1)'
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setShowResetModal(false);
+                setResetSuccess(false);
+                setError('');
+              }}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: 'none',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                color: '#f1f5f9',
+                cursor: 'pointer',
+                fontSize: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ×
+            </button>
+
+            <h2 style={{
+              fontSize: '24px',
+              fontWeight: 'bold',
+              color: '#f1f5f9',
+              marginBottom: '8px'
+            }}>
+              {MESSAGES.AUTH.RESET_PASSWORD}
+            </h2>
+            <p style={{
+              color: '#94a3b8',
+              fontSize: '14px',
+              marginBottom: '24px'
+            }}>
+              {MESSAGES.AUTH.RESET_PASSWORD_DESCRIPTION}
+            </p>
+
+            {resetSuccess ? (
+              <div style={{
+                padding: '16px',
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                border: '1px solid rgba(34, 197, 94, 0.2)',
+                borderRadius: '8px',
+                color: '#4ade80',
+                textAlign: 'center'
+              }}>
+                {MESSAGES.AUTH.RESET_EMAIL_SENT}
+              </div>
+            ) : (
+              <form onSubmit={handlePasswordReset} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {error && (
+                  <div style={{
+                    padding: '12px',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                    borderRadius: '8px',
+                    color: '#ef4444',
+                    fontSize: '14px'
+                  }}>
+                    {error}
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="reset-email" style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    color: '#94a3b8',
+                    marginBottom: '8px'
+                  }}>
+                    {MESSAGES.AUTH.EMAIL}
+                  </label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    required
+                    autoComplete="email"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      backgroundColor: '#0f172a',
+                      border: '1px solid #334155',
+                      borderRadius: '8px',
+                      color: '#f1f5f9',
+                      fontSize: '16px',
+                      outline: 'none'
+                    }}
+                    placeholder="your@email.com"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '12px 24px',
+                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1
+                  }}
+                >
+                  {loading ? '送信中...' : MESSAGES.AUTH.SEND_RESET_EMAIL}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

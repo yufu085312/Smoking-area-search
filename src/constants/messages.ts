@@ -25,6 +25,24 @@ export const MESSAGES = {
     HAS_ACCOUNT: '既にアカウントをお持ちですか？',
     PASSWORD_MISMATCH: 'パスワードが一致しません',
     LOGIN_REQUIRED: 'ログインが必要です',
+    FORGOT_PASSWORD: 'パスワードを忘れた方',
+    RESET_PASSWORD: 'パスワードリセット',
+    RESET_PASSWORD_DESCRIPTION: '登録したメールアドレスを入力してください。パスワードリセット用のリンクをお送りします。',
+    SEND_RESET_EMAIL: 'リセットメールを送信',
+    RESET_EMAIL_SENT: 'パスワードリセット用のメールを送信しました。メールをご確認ください。',
+  },
+
+  // 設定
+  SETTINGS: {
+    TITLE: '設定',
+    ACCOUNT_SETTINGS: 'アカウント設定',
+    DANGER_ZONE: '危険な操作',
+    DELETE_ACCOUNT_DESCRIPTION: 'アカウントを削除すると、全てのデータが完全に削除されます。この操作は元に戻せません。',
+    DELETE_ACCOUNT: 'アカウント削除',
+    DELETE_ACCOUNT_CONFIRM: '本当にアカウントを削除しますか？この操作は取り消せません。',
+    DELETE_ACCOUNT_REAUTH: 'セキュリティのため、再ログインが必要です。ログアウトして再ログインしてから、もう一度お試しください。',
+    TERMS: '利用規約・免責事項',
+    PRIVACY: 'プライバシーポリシー',
   },
 
   // ホームページ
@@ -53,6 +71,7 @@ export const MESSAGES = {
     SIGNUP_ERROR: 'サインアップエラー:',
     GOOGLE_LOGIN_ERROR: 'Googleログインエラー:',
     PASSWORD_MISMATCH: 'パスワードが一致しません',
+    DELETE_ACCOUNT_ERROR: 'アカウント削除エラー:',
   },
 
   // 成功メッセージ
@@ -61,6 +80,7 @@ export const MESSAGES = {
     SIGNUP: 'サインアップに成功しました',
     LOGOUT: 'ログアウトしました',
     GOOGLE_LOGIN: 'Googleログイン成功:',
+    DELETE_ACCOUNT: 'アカウントを削除しました',
   },
 } as const;
 
