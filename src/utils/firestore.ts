@@ -24,8 +24,27 @@ export interface SmokingArea {
   createdAt?: any;
 }
 
+// 報告理由のenum
+export enum ReportReason {
+  CLOSED = 'closed',              // 閉鎖
+  RELOCATED = 'relocated',        // 移転
+  NO_CIGARETTES = 'no_cigarettes', // 紙たばこ不可
+  OTHER = 'other'                 // その他
+}
+
+// 報告データの型定義
+export interface Report {
+  id?: string;
+  smokingAreaId: string;
+  reason: ReportReason;
+  comment?: string;
+  reportedById: string;
+  reportedAt?: any;
+}
+
 // コレクション名
 const SMOKING_AREAS_COLLECTION = 'smokingAreas';
+const REPORTS_COLLECTION = 'reports';
 
 /**
  * 新しい喫煙所を追加
@@ -36,7 +55,7 @@ export const addSmokingArea = async (smokingAreaData: Omit<SmokingArea, 'id' | '
       ...smokingAreaData,
       createdAt: Timestamp.now(),
     });
-    console.log('喫煙所が追加されました。ID:', docRef.id);
+    console.log('喫煙所が追加されました。');
     return docRef.id;
   } catch (error) {
     console.error('喫煙所の追加に失敗しました:', error);
@@ -129,6 +148,48 @@ export const searchNearbySmokingAreas = async (latitude: number, longitude: numb
     return allAreas;
   } catch (error) {
     console.error('近くの喫煙所の検索に失敗しました:', error);
+    throw error;
+  }
+};
+
+/**
+ * 報告を追加
+ */
+export const addReport = async (reportData: Omit<Report, 'id' | 'reportedAt'>): Promise<string> => {
+  try {
+    const docRef = await addDoc(collection(db, REPORTS_COLLECTION), {
+      ...reportData,
+      reportedAt: Timestamp.now(),
+    });
+    console.log('報告が追加されました。');
+    return docRef.id;
+  } catch (error) {
+    console.error('報告の追加に失敗しました:', error);
+    throw error;
+  }
+};
+
+/**
+ * 特定の喫煙所の報告を取得（管理用）
+ */
+export const getReportsForArea = async (areaId: string): Promise<Report[]> => {
+  try {
+    const q = query(
+      collection(db, REPORTS_COLLECTION),
+      where('smokingAreaId', '==', areaId),
+      orderBy('reportedAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    const reports: Report[] = [];
+    querySnapshot.forEach((doc) => {
+      reports.push({
+        id: doc.id,
+        ...doc.data(),
+      } as Report);
+    });
+    return reports;
+  } catch (error) {
+    console.error('報告の取得に失敗しました:', error);
     throw error;
   }
 };
