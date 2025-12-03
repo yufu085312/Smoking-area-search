@@ -312,3 +312,25 @@ a {
   border-top: 18px solid rgba(0, 0, 0, 0.1);
   transform: translateX(1px);
 }
+
+/* Clickable Pin Styles */
+.clickable-pin {
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.clickable-pin:hover .pin-container {
+  transform: scale(1.15);
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+}
+
+.clickable-pin:hover .pin-top {
+  box-shadow:
+    inset -2px -2px 4px rgba(0, 0, 0, 0.3),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+    0 4px 8px rgba(239, 68, 68, 0.5);
+}
+
+.clickable-pin:active .pin-container {
+  transform: scale(1.05);
+}

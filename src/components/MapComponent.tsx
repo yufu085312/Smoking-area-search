@@ -26,7 +26,7 @@ interface MapComponentProps {
 // カスタム3Dピンアイコンを作成
 const createCustomPinIcon = () => {
   return L.divIcon({
-    className: 'custom-pin-icon',
+    className: 'custom-pin-icon clickable-pin',
     html: `
       <div class="pin-container">
         <div class="pin-top"></div>
@@ -411,6 +411,14 @@ export default function MapComponent({
     }
   };
 
+  const openInGoogleMaps = (lat: number, lng: number) => {
+    // Google Maps URLを生成
+    const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+
+    // 新しいタブで開く
+    window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div style={{ position: 'relative' }}>
       {/* Gradient Border Container */}
@@ -471,6 +479,11 @@ export default function MapComponent({
                 key={area.id}
                 position={[area.latitude, area.longitude]}
                 icon={createCustomPinIcon()}
+                eventHandlers={{
+                  click: () => {
+                    openInGoogleMaps(area.latitude, area.longitude);
+                  },
+                }}
               >
                 {area.memo && currentZoom >= 17 && (
                   <Tooltip direction="top" offset={[0, -40]} opacity={0.9} permanent={true}>
