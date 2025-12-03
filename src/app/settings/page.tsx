@@ -415,6 +415,14 @@ export default function SettingsPage() {
 function TermsContent() {
   return (
     <div style={{ color: '#94a3b8', lineHeight: '1.8' }}>
+      <style jsx>{`
+        @media (max-width: 640px) {
+          h1 { font-size: 21px !important; }
+          h2 { font-size: 17px !important; }
+          h3 { font-size: 13px !important; }
+          p, span, strong { font-size: 11px !important; }
+        }
+      `}</style>
       <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#f1f5f9', marginBottom: '32px' }}>
         📋 利用規約・免責事項
       </h1>
@@ -557,6 +565,14 @@ function TermsContent() {
 function PrivacyContent() {
   return (
     <div style={{ color: '#94a3b8', lineHeight: '1.8' }}>
+      <style jsx>{`
+        @media (max-width: 640px) {
+          h1 { font-size: 21px !important; }
+          h2 { font-size: 17px !important; }
+          h3 { font-size: 13px !important; }
+          p, span, strong { font-size: 11px !important; }
+        }
+      `}</style>
       <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#f1f5f9', marginBottom: '32px' }}>
         🔒 プライバシーポリシー
       </h1>
