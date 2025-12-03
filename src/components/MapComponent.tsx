@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, useMapEvents } from 'react-leaflet';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { SmokingArea } from '@/utils/firestore';
+import { SmokingArea, ReportReason, addReport } from '@/utils/firestore';
 import { MESSAGES } from '@/constants/messages';
 import Modal from './ui/Modal';
 import Button from './ui/Button';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Leafletのデフォルトアイコン設定を修正
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -66,7 +67,8 @@ function MapClickHandler({
     if (onBoundsChange) {
       onBoundsChange(map.getBounds());
     }
-  }, [map, onBoundsChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map]);
 
   return null;
 }
@@ -313,10 +315,6 @@ function InitialMapUpdater({ center, shouldUpdate }: { center: [number, number],
 // 中心座標を取得するためのコンポーネント
 function CenterCoordinateTracker({ onCenterChange }: { onCenterChange: (lat: number, lng: number) => void }) {
   const map = useMapEvents({
-    move() {
-      const center = map.getCenter();
-      onCenterChange(center.lat, center.lng);
-    },
     moveend() {
       const center = map.getCenter();
       onCenterChange(center.lat, center.lng);
@@ -330,6 +328,7 @@ export default function MapComponent({
   onAddSmokingArea,
   onBoundsChange
 }: MapComponentProps) {
+  const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [memo, setMemo] = useState('');
@@ -341,6 +340,12 @@ export default function MapComponent({
   const [locationObtained, setLocationObtained] = useState(false);
   const [isAddMode, setIsAddMode] = useState(false);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+
+  // 報告関連の状態
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedAreaForReport, setSelectedAreaForReport] = useState<SmokingArea | null>(null);
+  const [reportReason, setReportReason] = useState<ReportReason>(ReportReason.CLOSED);
+  const [reportComment, setReportComment] = useState('');
 
   // ユーザーの現在地を取得
   useEffect(() => {
@@ -400,6 +405,10 @@ export default function MapComponent({
     setIsAddMode(false);
   };
 
+  const handleCenterChange = useCallback((lat: number, lng: number) => {
+    setMapCenter({ lat, lng });
+  }, []);
+
   const handleBoundsChange = (bounds: L.LatLngBounds) => {
     if (onBoundsChange) {
       onBoundsChange({
@@ -417,6 +426,34 @@ export default function MapComponent({
 
     // 新しいタブで開く
     window.open(googleMapsUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleReportSubmit = async () => {
+    if (!selectedAreaForReport) return;
+
+    try {
+      const reportData: any = {
+        smokingAreaId: selectedAreaForReport.id!,
+        reason: reportReason,
+        reportedById: user?.uid || 'anonymous',
+      };
+
+      // コメントがある場合のみ追加
+      if (reportComment.trim()) {
+        reportData.comment = reportComment;
+      }
+
+      await addReport(reportData);
+
+      alert(MESSAGES.MAP.REPORT_SUCCESS);
+      setShowReportModal(false);
+      setSelectedAreaForReport(null);
+      setReportReason(ReportReason.CLOSED);
+      setReportComment('');
+    } catch (error) {
+      console.error('Report error:', error);
+      alert(MESSAGES.MAP.REPORT_ERROR);
+    }
   };
 
   return (
@@ -449,7 +486,7 @@ export default function MapComponent({
             />
 
             <InitialMapUpdater center={[userLocation.lat, userLocation.lng]} shouldUpdate={locationObtained} />
-            <CenterCoordinateTracker onCenterChange={(lat, lng) => setMapCenter({ lat, lng })} />
+            {isAddMode && <CenterCoordinateTracker onCenterChange={handleCenterChange} />}
 
             <MapClickHandler 
               onZoomChange={setCurrentZoom}
@@ -479,12 +516,71 @@ export default function MapComponent({
                 key={area.id}
                 position={[area.latitude, area.longitude]}
                 icon={createCustomPinIcon()}
-                eventHandlers={{
-                  click: () => {
-                    openInGoogleMaps(area.latitude, area.longitude);
-                  },
-                }}
               >
+                <Popup>
+                  <div style={{ padding: '8px', minWidth: '200px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>
+                      喫煙所情報
+                    </h3>
+
+                    {area.memo && (
+                      <p style={{ fontSize: '14px', color: '# 475569', marginBottom: '12px' }}>
+                        {area.memo}
+                      </p>
+                    )}
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <button
+                        onClick={() => openInGoogleMaps(area.latitude, area.longitude)}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#3b82f6',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
+                      >
+                        <svg style={{ width: '14px', height: '14px' }} fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+                        </svg>
+                        {MESSAGES.MAP.OPEN_IN_GOOGLE_MAPS}
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedAreaForReport(area);
+                          setShowReportModal(true);
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          backgroundColor: '#f59e0b',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          transition: 'background-color 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#d97706'}
+                        onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f59e0b'}
+                      >
+                        🚨 {MESSAGES.MAP.REPORT_BUTTON}
+                      </button>
+                    </div>
+                  </div>
+                </Popup>
+
                 {area.memo && currentZoom >= 17 && (
                   <Tooltip direction="top" offset={[0, -40]} opacity={0.9} permanent={true}>
                     {area.memo}
@@ -650,6 +746,151 @@ export default function MapComponent({
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* 報告モーダル */}
+      <Modal
+        isOpen={showReportModal}
+        onClose={() => {
+          setShowReportModal(false);
+          setSelectedAreaForReport(null);
+          setReportReason(ReportReason.CLOSED);
+          setReportComment('');
+        }}
+        title={MESSAGES.MAP.REPORT_TITLE}
+        size="sm"
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <p style={{ fontSize: '14px', color: '#94a3b8' }}>
+            {MESSAGES.MAP.REPORT_DESCRIPTION}
+          </p>
+
+          <div>
+            <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#94a3b8', marginBottom: '12px' }}>
+              {MESSAGES.MAP.REPORT_REASON_LABEL}
+            </label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {[
+                { value: ReportReason.CLOSED, label: MESSAGES.MAP.REASON_CLOSED },
+                { value: ReportReason.RELOCATED, label: MESSAGES.MAP.REASON_RELOCATED },
+                { value: ReportReason.NO_CIGARETTES, label: MESSAGES.MAP.REASON_NO_CIGARETTES },
+                { value: ReportReason.OTHER, label: MESSAGES.MAP.REASON_OTHER },
+              ].map((option) => (
+                <label
+                  key={option.value}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px',
+                    backgroundColor: reportReason === option.value ? 'rgba(99, 102, 241, 0.1)' : 'rgba(30, 41, 59, 0.5)',
+                    border: reportReason === option.value ? '1px solid #6366f1' : '1px solid #334155',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => {
+                    if (reportReason !== option.value) {
+                      e.currentTarget.style.backgroundColor = 'rgba(51, 65, 85, 0.5)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (reportReason !== option.value) {
+                      e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.5)';
+                    }
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="reportReason"
+                    value={option.value}
+                    checked={reportReason === option.value}
+                    onChange={(e) => setReportReason(e.target.value as ReportReason)}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <span style={{ color: '#f1f5f9', fontSize: '14px' }}>{option.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="report-comment" style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#94a3b8', marginBottom: '8px' }}>
+              {MESSAGES.MAP.REPORT_COMMENT_LABEL}
+            </label>
+            <textarea
+              id="report-comment"
+              value={reportComment}
+              onChange={(e) => setReportComment(e.target.value)}
+              rows={3}
+              placeholder="詳しい状況を教えてください"
+              style={{
+                width: '100%',
+                padding: '12px',
+                backgroundColor: '#1e293b',
+                border: '1px solid #334155',
+                borderRadius: '8px',
+                color: '#f1f5f9',
+                fontSize: '14px',
+                outline: 'none',
+                transition: 'all 0.2s',
+                resize: 'vertical'
+              }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setShowReportModal(false);
+                setSelectedAreaForReport(null);
+                setReportReason(ReportReason.CLOSED);
+                setReportComment('');
+              }}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                color: '#f1f5f9',
+                fontSize: '14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              {MESSAGES.MAP.CANCEL}
+            </button>
+            <button
+              type="button"
+              onClick={handleReportSubmit}
+              style={{
+                padding: '8px 16px',
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                transition: 'all 0.2s'
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.transform = 'translateY(-1px)';
+                e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
+              }}
+            >
+              {MESSAGES.MAP.REPORT_SEND}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

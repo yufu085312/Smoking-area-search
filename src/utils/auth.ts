@@ -45,7 +45,7 @@ export const signInWithEmail = async (
       email,
       password
     );
-    console.log('ログイン成功:', userCredential.user.email);
+    console.log('ログイン成功');
     return userCredential;
   } catch (error: any) {
     console.error('ログインエラー:', error);
@@ -60,7 +60,7 @@ export const signInWithGoogle = async (): Promise<UserCredential> => {
   try {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
-    console.log('Googleログイン成功:', userCredential.user.email);
+    console.log('Googleログイン成功');
     return userCredential;
   } catch (error: any) {
     console.error('Googleログインエラー:', error);
