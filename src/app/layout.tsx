@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
  
 export const metadata: Metadata = {
   title: "喫煙所サーチ",
+  verification: {
+    google: "JQSbQx1wj9btOCmKI620pKGQbu_vRN-od4Lx7g3cFSo",
+  },
 };
 
 export default function RootLayout({
