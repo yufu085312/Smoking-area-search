@@ -3,7 +3,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // バリデーション関数
+    // バリデーション関数: 喫煙所データ
     function isValidSmokingArea() {
       let data = request.resource.data;
       return data.keys().hasAll(['latitude', 'longitude', 'createdById', 'createdAt']) &&
@@ -14,15 +14,29 @@ service cloud.firestore {
              (!data.keys().hasAny(['memo']) || (data.memo is string && data.memo.size() <= 500));
     }
 
+    // バリデーション関数: 報告データ
+    function isValidReport() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['smokingAreaId', 'reason', 'reportedById', 'reportedAt']) &&
+             data.smokingAreaId is string &&
+             data.reason in ['closed', 'relocated', 'no_cigarettes', 'other'] &&
+             data.reportedById is string && data.reportedById == request.auth.uid &&
+             data.reportedAt is timestamp &&
+             (!data.keys().hasAny(['comment']) || (data.comment is string && data.comment.size() <= 500));
+    }
+
     // 喫煙所データのコレクション
     match /smokingAreas/{areaId} {
       // 誰でも読み取り可能
       allow read: if true;
       
-      // 認証済みユーザーのみ作成・更新・削除可能
-      // 作成・更新時はデータのバリデーションを行う
+      // 認証済みユーザーのみ作成可能
       allow create: if request.auth != null && isValidSmokingArea();
+      
+      // 認証済みユーザーのみ更新可能
       allow update: if request.auth != null && isValidSmokingArea();
+      
+      // 認証済みユーザーのみ削除可能（管理機能や自己削除用）
       allow delete: if request.auth != null;
     }
     
@@ -30,6 +44,16 @@ service cloud.firestore {
     match /users/{userId} {
       // 自分のデータのみ読み取り・書き込み可能
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // 報告データのコレクション
+    match /reports/{reportId} {
+      // 認証済みユーザーのみ作成可能
+      allow create: if request.auth != null && isValidReport();
+      
+      // 管理用、または自分の報告の読み取り（必要に応じて制限）
+      // 現状は認証ユーザーのみ読み取り可能とする
+      allow read: if request.auth != null;
     }
   }
 }
