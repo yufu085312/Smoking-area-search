@@ -4,14 +4,16 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, Popup, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { SmokingArea, ReportReason, addReport } from '@/utils/firestore';
+import { SmokingArea, ReportReason, addReport, Report } from '@/utils/firestore';
 import { MESSAGES } from '@/constants/messages';
 import Modal from './ui/Modal';
-import Button from './ui/Button';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Leafletのデフォルトアイコン設定を修正
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+const iconDefaultProto = L.Icon.Default.prototype as unknown as { _getIconUrl?: () => string };
+if (iconDefaultProto._getIconUrl) {
+  delete iconDefaultProto._getIconUrl;
+}
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
@@ -300,14 +302,14 @@ function ConfirmLocationControls({ onConfirm, onCancel }: { onConfirm: () => voi
 // 初回のみ地図の中心を更新するコンポーネント
 function InitialMapUpdater({ center, shouldUpdate }: { center: [number, number], shouldUpdate: boolean }) {
   const map = useMapEvents({});
-  const [hasUpdated, setHasUpdated] = useState(false);
+  const hasUpdatedRef = useRef(false);
   
   useEffect(() => {
-    if (shouldUpdate && !hasUpdated) {
+    if (shouldUpdate && !hasUpdatedRef.current) {
       map.setView(center, map.getZoom());
-      setHasUpdated(true);
+      hasUpdatedRef.current = true;
     }
-  }, [shouldUpdate, hasUpdated, center, map]);
+  }, [shouldUpdate, center, map]);
   
   return null;
 }
@@ -348,31 +350,45 @@ export default function MapComponent({
   const [reportComment, setReportComment] = useState('');
 
   // ユーザーの現在地を取得
+  const geolocationAttemptedRef = useRef(false);
+
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const newLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          };
-          setUserLocation(newLocation);
-          setMapCenter(newLocation);
-          setLocationObtained(true);
-        },
-        (error) => {
-          // エラー時は東京をデフォルトとして使用
-          setMapCenter(userLocation);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0
-        }
-      );
-    } else {
-      setMapCenter(userLocation);
-    }
+    if (geolocationAttemptedRef.current) return;
+    geolocationAttemptedRef.current = true;
+
+    const defaultLocation = { lat: 35.6762, lng: 139.6503 };
+    
+    const handleLocationSuccess = (position: GeolocationPosition) => {
+      const newLocation = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+      setUserLocation(newLocation);
+      setMapCenter(newLocation);
+      setLocationObtained(true);
+    };
+
+    const handleLocationError = () => {
+      setMapCenter(defaultLocation);
+    };
+
+    const initializeLocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          handleLocationSuccess,
+          handleLocationError,
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        setMapCenter(defaultLocation);
+      }
+    };
+
+    initializeLocation();
   }, []);
 
   const handleConfirmLocation = () => {
@@ -432,7 +448,7 @@ export default function MapComponent({
     if (!selectedAreaForReport) return;
 
     try {
-      const reportData: any = {
+      const reportData: Omit<Report, 'id' | 'reportedAt'> = {
         smokingAreaId: selectedAreaForReport.id!,
         reason: reportReason,
         reportedById: user?.uid || 'anonymous',
@@ -550,7 +566,7 @@ export default function MapComponent({
                         onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
                         onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3b82f6'}
                       >
-                        <svg style={{ width: '14px', height: '14px' }} fill="currentColor" viewBox="0 0 24 24">
+                        <svg style={{ width: '14px', height: '14px', fill: 'white' }} viewBox="0 0 24 24">
                           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                         </svg>
                         {MESSAGES.MAP.OPEN_IN_GOOGLE_MAPS}
