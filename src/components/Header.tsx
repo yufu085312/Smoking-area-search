@@ -5,7 +5,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { signOut } from '@/utils/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { MESSAGES } from '@/constants/messages';
-import Button from './ui/Button';
 
 export default function Header() {
   const { user } = useAuth();
