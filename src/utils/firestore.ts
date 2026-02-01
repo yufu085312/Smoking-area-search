@@ -136,16 +136,57 @@ export const deleteSmokingArea = async (areaId: string): Promise<void> => {
 
 /**
  * 位置情報に基づいて近くの喫煙所を検索
- * 注: Firestoreのジオクエリには制限があるため、
- * より高度な位置検索にはGeoFirestoreなどのライブラリを使用することを推奨
+ * 緯度の範囲でクエリを行い、経度と距離のフィルタリングをクライアントサイドで行います。
  */
-export const searchNearbySmokingAreas = async (latitude: number, longitude: number, radiusKm: number = 5): Promise<SmokingArea[]> => {
-  // 簡易的な実装例
-  // 実際の実装では、緯度経度の範囲を計算して検索する必要があります
+export const searchNearbySmokingAreas = async (
+  lat: number,
+  lng: number,
+  radiusInMeters: number = 500
+): Promise<SmokingArea[]> => {
   try {
-    const allAreas = await getAllSmokingAreas();
-    // ここで距離計算とフィルタリングを行う
-    return allAreas;
+    // 緯度1度あたりの距離は約111km
+    const latDelta = radiusInMeters / 111000;
+    const minLat = lat - latDelta;
+    const maxLat = lat + latDelta;
+
+    // 緯度でクエリを作成
+    const q = query(
+      collection(db, SMOKING_AREAS_COLLECTION),
+      where('latitude', '>=', minLat),
+      where('latitude', '<=', maxLat)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const smokingAreas: SmokingArea[] = [];
+
+    // ハーフェサイン公式（簡易版）で距離を計算してフィルタリング
+    // 地球の半径 (メートル)
+    const R = 6371000;
+
+    querySnapshot.forEach((doc) => {
+      const data = doc.data() as SmokingArea;
+      const areaLat = data.latitude;
+      const areaLng = data.longitude;
+
+      // 経度の差を考慮して距離を計算
+      const dLat = (areaLat - lat) * (Math.PI / 180);
+      const dLng = (areaLng - lng) * (Math.PI / 180);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat * (Math.PI / 180)) * Math.cos(areaLat * (Math.PI / 180)) *
+        Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+
+      if (distance <= radiusInMeters) {
+        smokingAreas.push({
+          id: doc.id,
+          ...data,
+        });
+      }
+    });
+
+    return smokingAreas;
   } catch (error) {
     console.error('近くの喫煙所の検索に失敗しました:', error);
     throw error;
