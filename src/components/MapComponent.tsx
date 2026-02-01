@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, Popup, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, Popup, useMapEvents, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { SmokingArea, ReportReason, addReport, Report } from '@/utils/firestore';
@@ -24,7 +24,10 @@ interface MapComponentProps {
   smokingAreas: SmokingArea[];
   onAddSmokingArea: (lat: number, lng: number, memo?: string) => void;
   onBoundsChange?: (bounds: { minLat: number, maxLat: number, minLng: number, maxLng: number }) => void;
+  onCenterChange?: (lat: number, lng: number) => void;
 }
+
+export const SEARCH_RADIUS = 300; // 300m
 
 // カスタム3Dピンアイコンを作成
 const createCustomPinIcon = () => {
@@ -42,13 +45,14 @@ const createCustomPinIcon = () => {
   });
 };
 
-// 地図クリックイベントとズームイベントを処理するコンポーネント
 function MapClickHandler({ 
   onZoomChange,
   onBoundsChange,
+  onCenterChange,
 }: { 
   onZoomChange: (zoom: number) => void;
     onBoundsChange?: (bounds: L.LatLngBounds) => void;
+    onCenterChange?: (lat: number, lng: number) => void;
 }) {
   const map = useMapEvents({
     zoomend() {
@@ -60,6 +64,10 @@ function MapClickHandler({
     moveend() {
       if (onBoundsChange) {
         onBoundsChange(map.getBounds());
+      }
+      if (onCenterChange) {
+        const center = map.getCenter();
+        onCenterChange(center.lat, center.lng);
       }
     },
   });
@@ -328,7 +336,8 @@ function CenterCoordinateTracker({ onCenterChange }: { onCenterChange: (lat: num
 export default function MapComponent({
   smokingAreas,
   onAddSmokingArea,
-  onBoundsChange
+  onBoundsChange,
+  onCenterChange
 }: MapComponentProps) {
   const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
@@ -436,6 +445,13 @@ export default function MapComponent({
     }
   };
 
+  const handleLocalCenterChange = (lat: number, lng: number) => {
+    setMapCenter({ lat, lng });
+    if (onCenterChange) {
+      onCenterChange(lat, lng);
+    }
+  };
+
   const openInGoogleMaps = (lat: number, lng: number) => {
     // Google Maps URLを生成
     const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
@@ -507,7 +523,23 @@ export default function MapComponent({
             <MapClickHandler 
               onZoomChange={setCurrentZoom}
               onBoundsChange={handleBoundsChange}
+              onCenterChange={handleLocalCenterChange}
             />
+
+            {/* 検索サークル */}
+            {mapCenter && (
+              <Circle
+                center={[mapCenter.lat, mapCenter.lng]}
+                radius={SEARCH_RADIUS}
+                pathOptions={{
+                  color: '#6366f1',
+                  fillColor: '#6366f1',
+                  fillOpacity: 0.1,
+                  weight: 2,
+                  dashArray: '5, 10'
+                }}
+              />
+            )}
 
             {/* 現在地マーカー */}
             {locationObtained && (

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { 
-  getAllSmokingAreas, 
+  searchNearbySmokingAreas, 
   addSmokingArea,
   SmokingArea
 } from '@/utils/firestore';
@@ -30,21 +30,42 @@ export default function Home() {
   const { user, loading: authLoading } = useAuth();
   const [smokingAreas, setSmokingAreas] = useState<SmokingArea[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
 
   // 喫煙所データを取得
-  useEffect(() => {
-    const fetchSmokingAreas = async () => {
-      try {
-        const areas = await getAllSmokingAreas();
-        setSmokingAreas(areas);
-      } catch (error) {
-        console.error(MESSAGES.ERROR.DATA_FETCH_FAILED, error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchNearbyAreas = async (lat: number, lng: number) => {
+    try {
+      const areas = await searchNearbySmokingAreas(lat, lng);
+      setSmokingAreas(areas);
+    } catch (error) {
+      console.error(MESSAGES.ERROR.DATA_FETCH_FAILED, error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchSmokingAreas();
+  // 地図の中心が変更された時に取得
+  useEffect(() => {
+    if (mapCenter) {
+      fetchNearbyAreas(mapCenter.lat, mapCenter.lng);
+    }
+  }, [mapCenter]);
+
+  // 初期化時に現在地取得
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const center = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setMapCenter(center);
+        },
+        () => {
+          setMapCenter({ lat: 35.6762, lng: 139.6503 });
+        }
+      );
+    } else {
+      setMapCenter({ lat: 35.6762, lng: 139.6503 });
+    }
   }, []);
 
   const handleAddSmokingArea = async (
@@ -73,8 +94,9 @@ export default function Home() {
       await addSmokingArea(newArea);
       
       // リストを再取得
-      const areas = await getAllSmokingAreas();
-      setSmokingAreas(areas);
+      if (mapCenter) {
+        fetchNearbyAreas(mapCenter.lat, mapCenter.lng);
+      }
     } catch (error) {
       console.error(MESSAGES.ERROR.SMOKING_AREA_ADD_FAILED, error);
     }
@@ -108,6 +130,7 @@ export default function Home() {
           <MapComponent
             smokingAreas={smokingAreas}
             onAddSmokingArea={handleAddSmokingArea}
+            onCenterChange={(lat, lng) => setMapCenter({ lat, lng })}
           />
         </div>
       </main>
