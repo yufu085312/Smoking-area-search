@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, Popup, useMapEvents, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { SmokingArea, ReportReason, addReport, Report } from '@/utils/firestore';
+import { SmokingArea, ReportReason, addReport, Report, SmokingAreaStatus, updateSmokingArea } from '@/utils/firestore';
 import { MESSAGES } from '@/constants/messages';
 import Modal from './ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
@@ -23,6 +23,7 @@ L.Icon.Default.mergeOptions({
 interface MapComponentProps {
   smokingAreas: SmokingArea[];
   onAddSmokingArea: (lat: number, lng: number, memo?: string) => void;
+  onUpdateArea?: () => void;
   onBoundsChange?: (bounds: { minLat: number, maxLat: number, minLng: number, maxLng: number }) => void;
   onCenterChange?: (lat: number, lng: number) => void;
 }
@@ -30,13 +31,27 @@ interface MapComponentProps {
 export const SEARCH_RADIUS = 300; // 300m
 
 // カスタム3Dピンアイコンを作成
-const createCustomPinIcon = () => {
+const createCustomPinIcon = (status: SmokingAreaStatus = SmokingAreaStatus.APPROVED, isOwner: boolean = false) => {
+  let color = '#6366f1'; // デフォルト青
+  let shadowColor = 'rgba(99, 102, 241, 0.4)';
+
+  if (status === SmokingAreaStatus.PENDING) {
+    color = '#94a3b8'; // グレー（審査中）
+    shadowColor = 'rgba(148, 163, 184, 0.4)';
+  } else if (status === SmokingAreaStatus.REJECTED) {
+    color = '#f87171'; // 赤（却下）
+    shadowColor = 'rgba(248, 113, 113, 0.4)';
+  } else if (isOwner) {
+    color = '#fbbf24'; // 黄色（自分の投稿）
+    shadowColor = 'rgba(251, 191, 36, 0.4)';
+  }
+
   return L.divIcon({
     className: 'custom-pin-icon clickable-pin',
     html: `
       <div class="pin-container">
-        <div class="pin-top"></div>
-        <div class="pin-bottom"></div>
+        <div class="pin-top" style="background: ${color};"></div>
+        <div class="pin-bottom" style="border-top-color: ${color};"></div>
       </div>
     `,
     iconSize: [30, 42],
@@ -336,10 +351,11 @@ function CenterCoordinateTracker({ onCenterChange }: { onCenterChange: (lat: num
 export default function MapComponent({
   smokingAreas,
   onAddSmokingArea,
+  onUpdateArea,
   onBoundsChange,
   onCenterChange
 }: MapComponentProps) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [memo, setMemo] = useState('');
@@ -563,13 +579,27 @@ export default function MapComponent({
               <Marker
                 key={area.id}
                 position={[area.latitude, area.longitude]}
-                icon={createCustomPinIcon()}
+                icon={createCustomPinIcon(area.status, user?.uid === area.createdById)}
               >
                 <Popup>
                   <div style={{ padding: '8px', minWidth: '200px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', marginBottom: '8px' }}>
-                      喫煙所情報
-                    </h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#1e293b', margin: 0 }}>
+                        喫煙所情報
+                      </h3>
+                      {area.status !== SmokingAreaStatus.APPROVED && (
+                        <span style={{
+                          fontSize: '10px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: area.status === SmokingAreaStatus.PENDING ? '#94a3b8' : '#f87171',
+                          color: 'white',
+                          fontWeight: 'bold'
+                        }}>
+                          {area.status === SmokingAreaStatus.PENDING ? '審査中' : '非承認'}
+                        </span>
+                      )}
+                    </div>
 
                     {area.memo && (
                       <p style={{ fontSize: '14px', color: '# 475569', marginBottom: '12px' }}>
@@ -625,6 +655,53 @@ export default function MapComponent({
                       >
                         🚨 {MESSAGES.MAP.REPORT_BUTTON}
                       </button>
+
+                      {isAdmin && area.status !== SmokingAreaStatus.APPROVED && (
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '4px', paddingTop: '8px', borderTop: '1px solid #e2e8f0' }}>
+                          <button
+                            onClick={async () => {
+                              if (window.confirm('この喫煙所を承認して公開しますか？')) {
+                                await updateSmokingArea(area.id!, { status: SmokingAreaStatus.APPROVED });
+                                onUpdateArea?.();
+                              }
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '6px',
+                              backgroundColor: '#10b981',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            承認する
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (window.confirm('この喫煙所を非承認にしますか？')) {
+                                await updateSmokingArea(area.id!, { status: SmokingAreaStatus.REJECTED });
+                                onUpdateArea?.();
+                              }
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '6px',
+                              backgroundColor: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            却下
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Popup>

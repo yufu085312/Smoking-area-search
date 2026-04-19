@@ -27,7 +27,7 @@ const MapComponent = dynamic(() => import('@/components/MapComponent'), {
 
 export default function Home() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const [smokingAreas, setSmokingAreas] = useState<SmokingArea[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -35,7 +35,7 @@ export default function Home() {
   // 喫煙所データを取得
   const fetchNearbyAreas = async (lat: number, lng: number) => {
     try {
-      const areas = await searchNearbySmokingAreas(lat, lng);
+      const areas = await searchNearbySmokingAreas(lat, lng, 300, user?.uid, isAdmin);
       setSmokingAreas(areas);
     } catch (error) {
       console.error(MESSAGES.ERROR.DATA_FETCH_FAILED, error);
@@ -92,6 +92,7 @@ export default function Home() {
       }
 
       await addSmokingArea(newArea);
+      alert('喫煙所を追加しました。管理者の承認後に一般公開されます。');
       
       // リストを再取得
       if (mapCenter) {
@@ -130,6 +131,7 @@ export default function Home() {
           <MapComponent
             smokingAreas={smokingAreas}
             onAddSmokingArea={handleAddSmokingArea}
+            onUpdateArea={() => mapCenter && fetchNearbyAreas(mapCenter.lat, mapCenter.lng)}
             onCenterChange={(lat, lng) => setMapCenter({ lat, lng })}
           />
         </div>
