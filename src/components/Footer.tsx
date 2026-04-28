@@ -11,7 +11,6 @@ export default function Footer() {
           <div className="text-text-secondary text-sm">
             &copy; {currentYear} {MESSAGES.HOME.TITLE}. All rights reserved.
           </div>
-          
           <div className="flex flex-wrap justify-center gap-6 text-sm">
             <Link 
               href="/terms" 
