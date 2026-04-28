@@ -5,12 +5,46 @@ import { useRouter } from 'next/navigation';
 import { deleteAccount, signOut, resetPassword } from '@/utils/auth';
 import { MESSAGES } from '@/constants/messages';
 import { useState } from 'react';
+import { TermsContent, PrivacyContent } from '@/components/LegalContent';
 
 export default function SettingsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [activeModal, setActiveModal] = useState<'terms' | 'privacy' | null>(null);
+  const [activeModal, setActiveModal] = useState<'terms' | 'privacy' | 'contact' | null>(null);
   const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
+
+  const handleContactSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+
+    try {
+      const response = await fetch('https://formspree.io/f/maqarerq', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json' 
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        setSubmitStatus('success');
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      console.error('Contact Form Error:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleDeleteAccount = async () => {
     if (!user) return;
@@ -135,6 +169,30 @@ export default function SettingsPage() {
               <span>{MESSAGES.SETTINGS.PRIVACY}</span>
               <svg style={{ width: '20px', height: '20px', color: '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            <button 
+              onClick={() => setActiveModal('contact')}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '16px',
+                color: '#f1f5f9',
+                backgroundColor: 'transparent',
+                border: 'none',
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s',
+                textAlign: 'left'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <span>お問い合わせ</span>
+              <svg style={{ width: '20px', height: '20px', color: '#94a3b8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </button>
           </div>
@@ -401,353 +459,148 @@ export default function SettingsPage() {
               ×
             </button>
 
-            <div style={{ padding: '32px' }}>
-              {activeModal === 'terms' ? <TermsContent /> : <PrivacyContent />}
+            <div style={{ padding: '48px 32px' }}>
+              {activeModal === 'terms' && <TermsContent />}
+              {activeModal === 'privacy' && <PrivacyContent />}
+              {activeModal === 'contact' && (
+                <div style={{ color: '#f1f5f9' }}>
+                  <header style={{ textAlign: 'center', marginBottom: '32px' }}>
+                    <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📧</div>
+                    <h1 style={{ 
+                      fontSize: '2rem', 
+                      fontWeight: '800', 
+                      marginBottom: '8px',
+                      background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent'
+                    }}>
+                      お問い合わせ
+                    </h1>
+                    <p style={{ fontSize: '0.9rem', color: '#94a3b8' }}>ご意見・ご要望・不具合報告など</p>
+                  </header>
+
+                  {submitStatus === 'success' ? (
+                    <div style={{ 
+                      textAlign: 'center', 
+                      padding: '40px', 
+                      backgroundColor: 'rgba(34, 197, 94, 0.1)', 
+                      borderRadius: '24px', 
+                      border: '1px solid rgba(34, 197, 94, 0.2)' 
+                    }}>
+                      <div style={{ fontSize: '3rem', marginBottom: '16px' }}>✅</div>
+                      <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '12px' }}>送信完了いたしました</h2>
+                      <p style={{ color: '#94a3b8', marginBottom: '24px' }}>お問い合わせありがとうございます。内容を確認次第、必要に応じてご連絡させていただきます。</p>
+                      <button 
+                        onClick={() => setActiveModal(null)}
+                        style={{ 
+                          padding: '12px 40px', 
+                          backgroundColor: '#22c55e', 
+                          color: 'white', 
+                          borderRadius: '9999px', 
+                          fontWeight: 'bold', 
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        閉じる
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleContactSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', color: '#94a3b8', marginBottom: '8px' }}>お名前</label>
+                        <input 
+                          type="text" 
+                          name="name" 
+                          required 
+                          defaultValue={user?.displayName || ''}
+                          style={{ 
+                            width: '100%', 
+                            backgroundColor: '#0f172a', 
+                            border: '1px solid rgba(255, 255, 255, 0.1)', 
+                            borderRadius: '12px', 
+                            padding: '14px 16px', 
+                            color: '#f1f5f9',
+                            fontSize: '1rem',
+                            outline: 'none'
+                          }}
+                          placeholder="あなたの名前"
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', color: '#94a3b8', marginBottom: '8px' }}>メールアドレス</label>
+                        <input 
+                          type="email" 
+                          name="email" 
+                          required 
+                          defaultValue={user?.email || ''}
+                          style={{ 
+                            width: '100%', 
+                            backgroundColor: '#0f172a', 
+                            border: '1px solid rgba(255, 255, 255, 0.1)', 
+                            borderRadius: '12px', 
+                            padding: '14px 16px', 
+                            color: '#f1f5f9',
+                            fontSize: '1rem',
+                            outline: 'none'
+                          }}
+                          placeholder="example@mail.com"
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: '500', color: '#94a3b8', marginBottom: '8px' }}>メッセージ</label>
+                        <textarea 
+                          name="message" 
+                          required 
+                          rows={5}
+                          style={{ 
+                            width: '100%', 
+                            backgroundColor: '#0f172a', 
+                            border: '1px solid rgba(255, 255, 255, 0.1)', 
+                            borderRadius: '12px', 
+                            padding: '14px 16px', 
+                            color: '#f1f5f9',
+                            fontSize: '1rem',
+                            outline: 'none',
+                            resize: 'none',
+                            lineHeight: '1.6'
+                          }}
+                          placeholder="お問い合わせ内容を入力してください"
+                        ></textarea>
+                      </div>
+
+                      {submitStatus === 'error' && (
+                        <p style={{ color: '#ef4444', fontSize: '0.9rem' }}>エラーが発生しました。時間をおいて再度お試しください。</p>
+                      )}
+
+                      <button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        style={{ 
+                          width: '100%', 
+                          padding: '16px', 
+                          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)', 
+                          color: 'white', 
+                          borderRadius: '12px', 
+                          fontWeight: 'bold', 
+                          fontSize: '1.1rem',
+                          border: 'none',
+                          cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                          opacity: isSubmitting ? 0.7 : 1,
+                          boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        {isSubmitting ? '送信中...' : 'メッセージを送信する'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
     </>
-  );
-}
-
-// Terms Content Component
-function TermsContent() {
-  return (
-    <div style={{ color: '#94a3b8', lineHeight: '1.8' }}>
-      <style jsx>{`
-        @media (max-width: 640px) {
-          h1 { font-size: 21px !important; }
-          h2 { font-size: 17px !important; }
-          h3 { font-size: 13px !important; }
-          p, span, strong { font-size: 11px !important; }
-        }
-      `}</style>
-      <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#f1f5f9', marginBottom: '32px' }}>
-        📋 利用規約・免責事項
-      </h1>
-      
-      {/* Section 1 */}
-      <section style={{ marginBottom: '40px' }}>
-        <div style={{ display: 'flex', alignItems: 'start', gap: '16px', marginBottom: '16px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            minWidth: '40px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold'
-          }}>
-            1
-          </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', marginTop: '4px' }}>
-            喫煙に関する法令遵守と情報の正確性
-          </h2>
-        </div>
-        <div style={{ marginLeft: '56px' }}>
-          <p style={{ marginBottom: '16px' }}>
-            日本では、健康増進法や各自治体の条例により、喫煙場所が厳しく規制されています。
-          </p>
-          <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(59, 130, 246, 0.1)', marginBottom: '16px' }}>
-            <strong style={{ color: '#60a5fa', display: 'block', marginBottom: '8px' }}>⚖️ 規制の多様性</strong>
-            <p>
-              国の法律に加え、東京都や大阪府など、自治体独自の厳しい受動喫煙防止条例が存在します。本サービスで提供される情報が、必ずしも全ての地域の最新の条例に合致しているとは限りません。
-            </p>
-          </div>
-          <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(234, 179, 8, 0.1)' }}>
-            <strong style={{ color: '#fbbf24', display: 'block', marginBottom: '8px' }}>⏰ 情報の鮮度と変更</strong>
-            <p>
-              施設側のルールや自治体の条例は頻繁に変更されます（例：路上の喫煙禁止エリアの変更、商業施設の喫煙所閉鎖）。本サービスの情報はユーザー投稿に依存しているため、<strong style={{ color: '#ef4444' }}>情報が古くなっている可能性があります。</strong>
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 2 */}
-      <section style={{ marginBottom: '40px' }}>
-        <div style={{ display: 'flex', alignItems: 'start', gap: '16px', marginBottom: '16px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            minWidth: '40px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold'
-          }}>
-            2
-          </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', marginTop: '4px' }}>
-            免責事項（Disclaimer）
-          </h2>
-        </div>
-        <div style={{ marginLeft: '56px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
-            <strong style={{ color: '#ef4444', display: 'block', marginBottom: '8px' }}>⚠️ 情報の非保証</strong>
-            <p>
-              当サイトで提供される情報（特にユーザー投稿によるもの）の正確性、最新性、完全性、安全性について、運営者は一切の保証をいたしません。利用者は、最終的に現地の掲示やルールをご自身で確認する責任があります。
-            </p>
-          </div>
-          <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
-            <strong style={{ color: '#ef4444', display: 'block', marginBottom: '8px' }}>🚫 責任の限定</strong>
-            <p>
-              本サイトの情報に基づき利用者が何らかの損害（罰金、過料、施設からのクレーム、第三者とのトラブルなど）を被ったとしても、運営者は一切の責任を負いません。全ての行動は利用者ご自身の自己責任となります。
-            </p>
-          </div>
-          <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
-            <strong style={{ color: '#ef4444', display: 'block', marginBottom: '8px' }}>🗑️ 情報削除の権利</strong>
-            <p>
-              公序良俗に反する情報、誤情報、または第三者の権利を侵害する情報が投稿された場合、運営者の判断で予告なく削除する権利を有します。
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 3 */}
-      <section>
-        <div style={{ display: 'flex', alignItems: 'start', gap: '16px', marginBottom: '16px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            minWidth: '40px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold'
-          }}>
-            3
-          </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', marginTop: '4px' }}>
-            禁止事項
-          </h2>
-        </div>
-        <div style={{ marginLeft: '56px' }}>
-          <p style={{ marginBottom: '16px' }}>以下の行為を禁止します：</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <span style={{ color: '#ef4444' }}>❌</span>
-              <span>虚偽の喫煙所情報を投稿すること</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <span style={{ color: '#ef4444' }}>❌</span>
-              <span>立ち入り禁止区域や私有地など、不適切な場所を喫煙所として登録すること</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <span style={{ color: '#ef4444' }}>❌</span>
-              <span>法令や条例に違反する場所での喫煙を助長する行為</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <span style={{ color: '#ef4444' }}>❌</span>
-              <span>他のユーザーや第三者に迷惑をかける行為</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <span style={{ color: '#ef4444' }}>❌</span>
-              <span>当サイトの運営を妨害する行為</span>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-// Privacy Content Component
-function PrivacyContent() {
-  return (
-    <div style={{ color: '#94a3b8', lineHeight: '1.8' }}>
-      <style jsx>{`
-        @media (max-width: 640px) {
-          h1 { font-size: 21px !important; }
-          h2 { font-size: 17px !important; }
-          h3 { font-size: 13px !important; }
-          p, span, strong { font-size: 11px !important; }
-        }
-      `}</style>
-      <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#f1f5f9', marginBottom: '32px' }}>
-        🔒 プライバシーポリシー
-      </h1>
-
-      {/* Section 1 */}
-      <section style={{ marginBottom: '40px' }}>
-        <div style={{ display: 'flex', alignItems: 'start', gap: '16px', marginBottom: '16px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            minWidth: '40px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold'
-          }}>
-            1
-          </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', marginTop: '4px' }}>
-            収集する情報
-          </h2>
-        </div>
-        <div style={{ marginLeft: '56px' }}>
-          <p style={{ marginBottom: '16px' }}>当サービスでは、以下の情報を収集する場合があります：</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(147, 51, 234, 0.1)' }}>
-              <strong style={{ color: '#a78bfa', display: 'block', marginBottom: '8px' }}>🔐 認証情報</strong>
-              <p>
-                Googleアカウントでログインする際に、Googleから提供される基本情報（名前、メールアドレス、プロフィール画像など）。
-              </p>
-            </div>
-            <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
-              <strong style={{ color: '#60a5fa', display: 'block', marginBottom: '8px' }}>📝 投稿データ</strong>
-              <p>
-                喫煙所情報の投稿時に、投稿者のユーザーID、投稿日時、位置情報（緯度・経度）、コメント内容。
-              </p>
-            </div>
-            <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(34, 197, 94, 0.1)' }}>
-              <strong style={{ color: '#4ade80', display: 'block', marginBottom: '8px' }}>📊 利用状況データ</strong>
-              <p>
-                Google Analytics等の解析ツールを使用して収集される、サイトの閲覧履歴、滞在時間、クリック数などの統計データ。
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 2 */}
-      <section style={{ marginBottom: '40px' }}>
-        <div style={{ display: 'flex', alignItems: 'start', gap: '16px', marginBottom: '16px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            minWidth: '40px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold'
-          }}>
-            2
-          </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', marginTop: '4px' }}>
-            利用目的
-          </h2>
-        </div>
-        <div style={{ marginLeft: '56px' }}>
-          <p style={{ marginBottom: '16px' }}>収集した情報は、以下の目的で利用します：</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <span style={{ color: '#6366f1' }}>✓</span>
-              <span>本サービスの提供および運営のため</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <span style={{ color: '#6366f1' }}>✓</span>
-              <span>ユーザーからのお問い合わせに対応するため</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <span style={{ color: '#6366f1' }}>✓</span>
-              <span>サービスの改善、新機能の開発のため</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <span style={{ color: '#6366f1' }}>✓</span>
-              <span>不正利用の防止、スパム対策のため</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px', padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(255, 255, 255, 0.05)' }}>
-              <span style={{ color: '#6366f1' }}>✓</span>
-              <span>利用規約に違反する行為への対応のため</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 3 */}
-      <section style={{ marginBottom: '40px' }}>
-        <div style={{ display: 'flex', alignItems: 'start', gap: '16px', marginBottom: '16px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            minWidth: '40px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold'
-          }}>
-            3
-          </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', marginTop: '4px' }}>
-            第三者への提供
-          </h2>
-        </div>
-        <div style={{ marginLeft: '56px' }}>
-          <p style={{ marginBottom: '16px' }}>
-            法令に基づく場合を除き、ユーザーの同意なく個人情報を第三者に提供することはありません。ただし、以下の外部サービスを利用してデータを処理する場合があります。
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(249, 115, 22, 0.1)' }}>
-              <strong style={{ color: '#fb923c', display: 'block', marginBottom: '8px' }}>🔥 Firebase (Google Inc.)</strong>
-              <p>
-                認証、データベース、ホスティングなどのバックエンド機能のため。
-              </p>
-            </div>
-            <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(6, 182, 212, 0.1)' }}>
-              <strong style={{ color: '#22d3ee', display: 'block', marginBottom: '8px' }}>📈 Google Analytics (Google Inc.)</strong>
-              <p>
-                サイトのアクセス解析のため。
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 4 */}
-      <section>
-        <div style={{ display: 'flex', alignItems: 'start', gap: '16px', marginBottom: '16px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            minWidth: '40px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontWeight: 'bold'
-          }}>
-            4
-          </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#f1f5f9', marginTop: '4px' }}>
-            お問い合わせ
-          </h2>
-        </div>
-        <div style={{ marginLeft: '56px' }}>
-          <p style={{ marginBottom: '16px' }}>
-            本ポリシーに関するお問い合わせは、以下のメールアドレスまでご連絡ください。
-          </p>
-          <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
-            <a 
-              href="mailto:fuyu0853@icloud.com"
-              style={{ color: '#6366f1', textDecoration: 'none', fontWeight: '500' }}
-            >
-              📧 fuyu0853@icloud.com
-            </a>
-          </div>
-        </div>
-      </section>
-    </div>
   );
 }

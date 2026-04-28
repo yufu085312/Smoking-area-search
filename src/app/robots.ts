@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/settings'],
+      disallow: ['/settings', '/login', '/signup'],
     },
     sitemap: 'https://smoking.yu-fu.site/sitemap.xml',
   };
